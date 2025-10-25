@@ -10,34 +10,39 @@ app.use(express.json());
 const PORT = 3000;
 
 app.post('/sentiment', async (req, res) => {
-    const { base64Images } = req.body;
+    const { base64Image } = req.body;
     
     try {
-        const url = `${process.env.LAVA_BASE_URL}/forward?u=https://api.openai.com/v1/chat/completions`;
+        const url = `${process.env.LAVA_BASE_URL}/forward?u=${process.env.MODEL_URL}`;
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.LAVA_FORWARD_TOKEN}`,
+            'x-api-key': process.env.LAVA_FORWARD_TOKEN,
+            'anthropic-version': '2023-06-01'
         };
-
+ 
         const requestBody = {
-            model: 'gpt-4o-mini',
+            model: 'claude-haiku-4-5',
+            max_tokens: 100,
             messages: [
                 {
-                    role: "user",
+                    role: 'user',
                     content: [
-                        { 
-                            type: "text",
-                            text: "Take the following images. Give some feedback regarding how well the user is practicing good public speaking. This means things like looking at the camera when talking and not fidgeting or looking distracted. Give one sentence of feedback and a score from 0 - 10, 0 being bad and 10 being good. Also tell me how many images you see" 
-                        },
-                        ...base64Images.map(image => ({
-                            type: "image_url",
-                            image_url: {
-                                url: `data:image/webp;base64,${image.replace(/^data:image\/\w+;base64,/, '')}`
+                        {
+                            type: 'image',
+                            source: {
+                                type: 'base64',
+                                media_type: 'image/webp',
+                                data: base64Image.split(',')[1]
                             }
-                        })),
+                        },
+                        {
+                            type: 'text',
+                            text: 'Take the following image. Give some feedback regarding how well the user is practicing good public speaking. This means things like looking at the camera when talking and not fidgeting or looking distracted. Give one sentence of feedback and a score from 0 - 10, 0 being bad and 10 being good.'
+                        },
                     ],
                 },
             ],
+            system: 'You are a helpful assistant.'
         };
 
         const response = await fetch(url, {
@@ -48,8 +53,8 @@ app.post('/sentiment', async (req, res) => {
 
         const data = await response.json();
         console.log(data);
-        const result = data.choices[0].message.content;
-        res.json({ result });
+        //const result = data.choices[0].message.content;
+        res.json({ data });
     } catch (err) {
         console.error(err);
     }
