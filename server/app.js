@@ -10,8 +10,7 @@ app.use(express.json());
 const PORT = 3000;
 
 app.post('/sentiment', async (req, res) => {
-    const { base64Image } = req.body;
-    const cleanBase64 = base64Image.replace(/^data:image\/\w+;base64,/, '');
+    const { base64Images } = req.body;
     
     try {
         const url = `${process.env.LAVA_BASE_URL}/forward?u=https://api.openai.com/v1/chat/completions`;
@@ -28,14 +27,14 @@ app.post('/sentiment', async (req, res) => {
                     content: [
                         { 
                             type: "text",
-                            text: "Take the following image. Give some feedback regarding how well the user is practicing good public speaking. This means things like looking at the camera when talking and not fidgeting or looking distracted. Give one sentence of feedback and a score from 0 - 10, 0 being bad and 10 being good." 
+                            text: "Take the following images. Give some feedback regarding how well the user is practicing good public speaking. This means things like looking at the camera when talking and not fidgeting or looking distracted. Give one sentence of feedback and a score from 0 - 10, 0 being bad and 10 being good. Also tell me how many images you see" 
                         },
-                        {
+                        ...base64Images.map(image => ({
                             type: "image_url",
                             image_url: {
-                                url: `data:image/jpeg;base64,${cleanBase64}`
+                                url: `data:image/webp;base64,${image.replace(/^data:image\/\w+;base64,/, '')}`
                             }
-                        },
+                        })),
                     ],
                 },
             ],
@@ -48,6 +47,7 @@ app.post('/sentiment', async (req, res) => {
         });
 
         const data = await response.json();
+        console.log(data);
         const result = data.choices[0].message.content;
         res.json({ result });
     } catch (err) {
@@ -57,7 +57,6 @@ app.post('/sentiment', async (req, res) => {
 
 app.listen(PORT, (error) =>{
     if(!error) {
-        console.log(JSON.stringify(process.env.LAVA_FORWARD_TOKEN));
         console.log(`Server is running on https://localhost:${PORT}`);}
     else
         console.log("Error occured, ", error);
