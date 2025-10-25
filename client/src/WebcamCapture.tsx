@@ -4,47 +4,29 @@ import Webcam from 'react-webcam';
 const WebcamCapture = () => {
     const webcamRef = React.useRef<Webcam>(null);
     const [sentiment, setSentiment] = React.useState("");
-    const imagesRef = React.useRef<string[]>([]);
+
+    const capture = async () => {
+        if (!webcamRef.current)
+            return;
+        const image = webcamRef.current.getScreenshot();
+        if (!image)
+            return
+        
+        try {
+            const response = await fetch('http://localhost:3000/sentiment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify({ base64Image: image }),
+            })
+            const data = await response.json();
+            setSentiment(data.result);
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     React.useEffect(() => {
-        let count = 0;
-
-        const capture = () => {
-            if (!webcamRef.current)
-                return;
-            const newImage = webcamRef.current.getScreenshot();
-            if (!newImage)
-                return
-            
-            imagesRef.current = [...imagesRef.current, newImage];
-        };
-
-        const analyze = async () => {
-            const imagesToSend = imagesRef.current;
-            try {
-                const response = await fetch('http://localhost:3000/sentiment', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ base64Images: imagesToSend }),
-                })
-                imagesRef.current = [];
-                const data = await response.json();
-                console.log(data);
-                setSentiment(data.result);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        const interval = setInterval(() => {
-            capture();
-            count++;
-            console.log(count);
-            if (count == 2) {
-                analyze();
-                count = 0;
-            }
-        } , 5000); //1 second
+        const interval = setInterval(capture, 5000); //5 seconds
         return () => clearInterval(interval);
     }, []);
 
@@ -54,8 +36,9 @@ const WebcamCapture = () => {
                 audio={false}
                 ref={webcamRef}
                 screenshotFormat="image/webp"
-                screenshotQuality={0.5}
+                screenshotQuality={0.1}
             />
+            <button onClick={capture}>Capture photo</button>
             <div>{sentiment}</div>
         </div>
     )
