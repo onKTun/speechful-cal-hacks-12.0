@@ -1,3 +1,6 @@
+TO RUN: FIRST OPEN 2 TERMINALS: terminal 1 first type node app.js to run server. second terminal do npm run dev to run app.
+
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
