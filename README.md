@@ -53,7 +53,7 @@ To run Speechful on your local machine, follow these steps:
    node app.js
 2. **Start the client**
    ```bash
-   cd ../client
+   cd client
    npm install
    npm run dev
 3. **Open the app**
