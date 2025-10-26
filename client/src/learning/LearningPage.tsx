@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { processTranscript, compareTextAccuracy } from "./utils/processTranscript"
-
+// IMPORTNANT THIS PAGE WAS USEDD FOR TESTING NOT FOR ACTUAL PRODUCTION
 export default function LearningPageDev() {
     const [isMicOpen, setMicStatus] = useState(false)
     const [output, setOutput] = useState("")
