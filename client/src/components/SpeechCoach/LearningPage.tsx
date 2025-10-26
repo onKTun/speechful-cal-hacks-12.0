@@ -100,8 +100,22 @@ const LearningPage = () => {
   const handleTogglePause = async () => {
     if (microphone.current) {
       await closeMicrophone(microphone.current);
+      microphone.current = undefined;
     }
-    microphone.current = undefined;
+    else{
+      if (!microphone.current) {
+        try {
+          microphone.current = await getMicrophone();
+
+        } catch (error) {
+          console.error("error getting microphone:", error);
+        }
+      }
+      if (microphone.current && webSocket.current) {
+        await openMicrophone(microphone.current, webSocket.current);
+      }
+    }
+    
     setIsPaused(!isPaused);
   };
 
