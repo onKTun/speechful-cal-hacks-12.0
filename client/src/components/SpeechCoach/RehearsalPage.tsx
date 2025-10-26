@@ -1,13 +1,13 @@
+// temp, tentatively alive
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Webcam from "react-webcam";
 import { Home } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
-import { useSentimentCapture } from "../../hooks/useSentimentCapture";
+import { useVisualSentiment } from "../../hooks/useVisualSentiment";
 import { SetupScreen } from "./SetupScreen";
 import { SessionScreen } from "./SessionScreen";
 import { EmojiOverlay } from "./EmojiOverlay";
-import { SentimentDisplay } from "./SentimentDisplay";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
 import { SuggestionDisplay } from "./SuggestionDisplay";
@@ -27,8 +27,8 @@ const RehearsalPage = () => {
   const webcamRef = useRef<Webcam>(null);
   const intervalRef = useRef<number | null>(null);
 
-  // Use custom hook for sentiment capture
-  const { sentiment, suggestion } = useSentimentCapture(webcamRef, isStarted, isPaused);
+  // Use custom hook for visual sentiment capture with suggestions
+  const visualSentiment = useVisualSentiment(webcamRef, isStarted, isPaused);
 
   // Auto-advance word highlighting when enabled and session is running
   useEffect(() => {
@@ -151,10 +151,10 @@ const RehearsalPage = () => {
         <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
 
         {/* Suggestion Display */}
-        <SuggestionDisplay suggestion={suggestion} isVisible={isStarted}/>
+        <SuggestionDisplay suggestion={visualSentiment.suggestion} isVisible={isStarted}/>
 
         {/* Emoji Overlay based on Sentiment */}
-        <EmojiOverlay sentiment={sentiment} isVisible={isStarted} />
+        <EmojiOverlay sentiment={visualSentiment.sentiment.toString()} isVisible={isStarted} />
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />

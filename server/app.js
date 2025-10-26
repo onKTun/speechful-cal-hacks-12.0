@@ -31,19 +31,19 @@ const upload = multer({
 function getValues(str) {
     // Check if the response is a string and follows the expected format
     const text = str.content[0].text;
-
-    const match = text.match(/```json\s*([\s\S]*?)\s*```/);
-
-    if (match) {
-        const jsonString = match[1];
+    // Try to match JSON in code blocks first
+    let match = text.match(/```json\s*([\s\S]*?)\s*```/);
+    let jsonString = match ? match[1] : text.trim();
+    try {
         const data = JSON.parse(jsonString);
         return [data.facial_expression, data.eyesight, data.focus];
+    } catch (e) {
+        console.log(text);
+        return [-1, -1, -1];
     }
-    console.log(text);
-    return [-1, -1, -1];
 }
 
-app.post('/sentiment', async (req, res) => {
+app.post('/sentiment/visual', async (req, res) => {
     const { base64Image } = req.body;
     
     try {
@@ -56,7 +56,7 @@ app.post('/sentiment', async (req, res) => {
  
         const requestBody = {
             model: 'claude-haiku-4-5',
-            max_tokens: 200,
+            max_tokens: 100,
             messages: [
                 {
                     role: 'user',
@@ -97,7 +97,7 @@ app.post('/sentiment', async (req, res) => {
         console.log(result);
         //const result = data.choices[0].message.content;
         // if (!isValidClaudeJsonResponse(data.content[0].text)) {
-        //     data.content[0].text = '```json\n{"facial_expression": 5, "eyesight": 5, "focus": 5}\n```'
+        //     data.content[0].text = '```json\n{"facial_expression": 5, "eye_contact": 5, "focus": 5}\n```'
         // }
         res.json({ result });
     } catch (err) {
@@ -196,4 +196,4 @@ server.listen(PORT, (error) =>{
         console.log(`Server is running on https://localhost:${PORT}`);}
     else
         console.log("Error occured, ", error);
-});
+}); 
