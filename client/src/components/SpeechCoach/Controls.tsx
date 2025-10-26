@@ -1,5 +1,4 @@
 import { Play, Pause, X, Highlighter } from "lucide-react";
-import { Link } from "react-router-dom";
 
 interface ControlsProps {
   isPaused: boolean;
@@ -46,14 +45,12 @@ export const Controls = ({
       </button>
 
       {/* Stop/X Button */}
-      <Link to="/webcam">
-        <button
-          onClick={onStop}
-          className="p-5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg text-white hover:text-red-400 hover:scale-110 transition-all hover:bg-white/20 cursor-pointer"
-        >
-          <X className="w-7 h-7 text-whit" />
-        </button>
-      </Link>
+      <button
+        onClick={onStop}
+        className="p-5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg text-white hover:text-red-400 hover:scale-110 transition-all hover:bg-white/20 cursor-pointer"
+      >
+        <X className="w-7 h-7 text-white" />
+      </button>
     </div>
   );
 };

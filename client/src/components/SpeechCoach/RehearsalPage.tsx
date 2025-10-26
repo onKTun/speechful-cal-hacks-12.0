@@ -11,6 +11,7 @@ import { EmojiOverlay } from "./EmojiOverlay";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
 import { SuggestionDisplay } from "./SuggestionDisplay";
+import { FeedbackScreen } from "./FeedbackScreen";
 import RehearsalCapture from "../../RehearsalCapture";
 
 const RehearsalPage = () => {
@@ -24,7 +25,11 @@ const RehearsalPage = () => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [enableHighlighting, setEnableHighlighting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [videoURL, setVideoURL] = useState("");
+  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const webcamRef = useRef<Webcam>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const intervalRef = useRef<number | null>(null);
 
   // Use custom hook for visual sentiment capture with suggestions
@@ -71,6 +76,68 @@ const RehearsalPage = () => {
     };
   }, [isStarted, isPaused]);
 
+  // Cleanup video URL on unmount
+  useEffect(() => {
+    return () => {
+      if (videoURL) {
+        URL.revokeObjectURL(videoURL);
+      }
+    };
+  }, [videoURL]);
+
+  const startRecording = () => {
+    if (!webcamRef.current) {
+      console.error("Webcam ref not available");
+      return;
+    }
+    
+    if (!webcamRef.current.stream) {
+      console.error("Webcam stream not available");
+      return;
+    }
+    
+    try {
+      console.log("Starting recording with stream:", webcamRef.current.stream);
+      mediaRecorderRef.current = new MediaRecorder(webcamRef.current.stream, {
+        mimeType: "video/webm",
+      });
+      
+      mediaRecorderRef.current.addEventListener("dataavailable", (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          console.log("Recording chunk received:", event.data.size, "bytes");
+          setRecordedChunks((prev) => [...prev, event.data]);
+        }
+      });
+      
+      // Request data every 1000ms (1 second) to ensure chunks are captured
+      mediaRecorderRef.current.start(1000);
+      console.log("Recording started with 1s timeslice");
+    } catch (err) {
+      console.error("Error starting recording:", err);
+    }
+  };
+
+  const stopRecording = () => {
+    return new Promise<void>((resolve) => {
+      if (!mediaRecorderRef.current) {
+        resolve();
+        return;
+      }
+      
+      try {
+        // Listen for the stop event to know when recording is complete
+        mediaRecorderRef.current.addEventListener("stop", () => {
+          resolve();
+        }, { once: true });
+        
+        mediaRecorderRef.current.stop();
+      } catch (err) {
+        console.error("Error stopping recording:", err);
+        resolve();
+      }
+    });
+  };
+
   const handleStart = () => {
     setIsStarted(true);
     setIsPaused(false);
@@ -78,19 +145,107 @@ const RehearsalPage = () => {
     setShowTranscript(false);
     setCurrentWordIndex(0);
     setEnableHighlighting(false);
+    setRecordedChunks([]);
+    setVideoURL("");
+    setShowFeedback(false);
+    
+    // Retry logic to ensure webcam stream is ready before recording
+    let retryCount = 0;
+    const maxRetries = 10;
+    const retryInterval = 200; // 200ms between retries
+    
+    const tryStartRecording = () => {
+      if (webcamRef.current?.stream) {
+        console.log("Webcam stream ready, starting recording");
+        startRecording();
+      } else if (retryCount < maxRetries) {
+        retryCount++;
+        console.log(`Webcam stream not ready yet, retry ${retryCount}/${maxRetries}`);
+        setTimeout(tryStartRecording, retryInterval);
+      } else {
+        console.error("Failed to start recording: webcam stream not available after retries");
+      }
+    };
+    
+    // Start trying after a brief initial delay
+    setTimeout(tryStartRecording, 100);
   };
 
-  const handleStop = () => {
+  const handleStop = async () => {
+    console.log("=== STOPPING SESSION ===");
+    console.log("Current sentiment data count:", visualSentiment.dataCount);
+    console.log("Current visual ratings:", visualSentiment.visualRuntimeRatings);
+    
+    // Stop recording first
+    await stopRecording();
+    
+    // Stop the session - this also stops AI sentiment calls
+    setIsStarted(false);
+    setIsPaused(false);
+    
+    // Wait a brief moment for final chunks to be processed, then show feedback
+    setTimeout(() => {
+      setRecordedChunks((chunks) => {
+        console.log("Processing recorded chunks:", chunks.length, "chunks");
+        if (chunks.length > 0) {
+          // Create video URL from recorded chunks
+          const blob = new Blob(chunks, { type: "video/webm" });
+          const url = URL.createObjectURL(blob);
+          console.log("Video URL created:", url);
+          setVideoURL(url);
+          setShowFeedback(true);
+        } else {
+          // If no chunks recorded (edge case), still show feedback with a placeholder
+          console.warn("No video chunks recorded - showing feedback without video");
+          setShowFeedback(true);
+        }
+        return chunks;
+      });
+    }, 100);
+  };
+
+  const handleReset = () => {
     setIsStarted(false);
     setIsPaused(false);
     setElapsedTime(0);
     setShowTranscript(false);
     setCurrentWordIndex(0);
+    setShowFeedback(false);
+    
+    // Reset visual sentiment data
+    visualSentiment.reset();
+    
+    // Clean up video URL to prevent memory leaks
+    if (videoURL) {
+      URL.revokeObjectURL(videoURL);
+    }
+    setVideoURL("");
+    setRecordedChunks([]);
+    
+    if (mediaRecorderRef.current) {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (err) {
+        // Already stopped
+      }
+    }
   };
 
   const handleTogglePause = () => {
     setIsPaused(!isPaused);
   };
+
+  // Show feedback screen after session ends
+  if (showFeedback) {
+    return (
+      <FeedbackScreen
+        videoURL={videoURL}
+        visualRuntimeRatings={visualSentiment.visualRuntimeRatings}
+        dataCount={visualSentiment.dataCount}
+        onReset={handleReset}
+      />
+    );
+  }
 
   return (
     <div
