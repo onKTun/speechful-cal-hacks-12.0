@@ -1,4 +1,3 @@
-import './App.css'
 import Landing from './Landing.tsx'
 import WebcamCapture from './WebcamCapture.tsx'
 import LearningPageDev from './learning/LearningPage.tsx'
