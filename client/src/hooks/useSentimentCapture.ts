@@ -7,6 +7,8 @@ export const useSentimentCapture = (
   isPaused: boolean
 ) => {
   const [sentiment, setSentiment] = useState("");
+  const [runningRating, setRunningRating] = useState<number[][]>([]);
+  const [suggestion, setSuggestion] = useState("");
   const sentimentIntervalRef = useRef<number | null>(null);
 
   const capture = async () => {
@@ -24,7 +26,63 @@ export const useSentimentCapture = (
         body: JSON.stringify({ base64Image: image }),
       });
       const data = await response.json();
-      setSentiment(data.result);
+
+      setRunningRating(prev => {
+        const updated = [...prev, data.result];
+        if (updated.length > 5) {
+            updated.shift();
+        }
+
+
+        const sums = updated.reduce(
+            (acc, arr) => acc.map((v:number, i:number) => v + (arr[i] ?? 0)),
+            [0, 0, 0]
+        );
+        const averages: number[] = sums.map((v: number): number => v / updated.length);
+        const overallSentiment = averages.reduce((sum:number, val:number) => sum + val, 0) / averages.length;
+       
+        setSentiment(overallSentiment.toString());
+
+
+        const { value: worstPerformance, index: worstIndex } = averages.reduce(
+          (min, current, i) => current < min.value ? { value: current, index: i } : min,
+          { value: averages[0], index: 0 }
+        );
+
+
+        if (worstIndex === 0) {
+          // facial expression
+          if (worstPerformance < 5) {
+            setSuggestion("Smile!");
+          } else if (worstPerformance < 7) {
+            setSuggestion("Lighten Up!");
+          } else {
+            setSuggestion("Looking Good!");
+          }
+        } else if (worstIndex === 1) {
+          // eye contact
+          if (worstPerformance < 5) {
+            setSuggestion("Look Up!");
+          } else if (worstPerformance < 6) {
+            setSuggestion("Keep Eye Contact!");
+          } else {
+            setSuggestion("Looking Good!");
+          }
+        } else if (worstIndex === 2) {
+          // Focus
+          if (worstPerformance < 5) {
+            setSuggestion("Focus Up!");
+          } else if (worstPerformance < 7) {
+            setSuggestion("Keep Focus!");
+          } else {
+            setSuggestion("Looking Good!");
+          }
+        }
+       
+        return updated;
+    });
+
+      
     } catch (err) {
       console.error("Sentiment analysis error:", err);
     }
@@ -45,6 +103,6 @@ export const useSentimentCapture = (
     };
   }, [isStarted, isPaused]);
 
-  return sentiment;
+  return { sentiment, suggestion };
 };
 

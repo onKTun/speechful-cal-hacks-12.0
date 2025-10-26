@@ -10,9 +10,11 @@ export const SentimentDisplay = ({ sentiment, isVisible }: SentimentDisplayProps
 
   if (!isVisible || !sentiment) return null;
 
+  console.log("adding sentiment");
+
   return (
     <div
-      className={`absolute bottom-24 left-1/2 -translate-x-1/2 transition-opacity duration-500 px-6 md:px-12 ${
+      className={`absolute bottom-12 left-1/2 -translate-x-1/2 z-30 transition-opacity duration-500 px-6 md:px-12 ${
         isVisible && sentiment ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >
@@ -33,5 +35,7 @@ export const SentimentDisplay = ({ sentiment, isVisible }: SentimentDisplayProps
       </div>
     </div>
   );
+
+  
 };
 
