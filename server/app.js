@@ -79,7 +79,7 @@ app.post('/sentiment/visual', async (req, res) => {
         console.log(result);
         //const result = data.choices[0].message.content;
         // if (!isValidClaudeJsonResponse(data.content[0].text)) {
-        //     data.content[0].text = '```json\n{"facial_expression": 5, "eyesight": 5, "focus": 5}\n```'
+        //     data.content[0].text = '```json\n{"facial_expression": 5, "eye_contact": 5, "focus": 5}\n```'
         // }
         res.json({ result });
     } catch (err) {
@@ -87,9 +87,10 @@ app.post('/sentiment/visual', async (req, res) => {
     }
 });
 
-app.post('/sentiment/audio', async (req, res) => {
-    const { base64Image } = req.body;
-    
+app.post('/feedback', async(req, res) => {
+    const averagedRatings = req.body.averagedRatings;
+    console.log(averagedRatings);
+
     try {
         const url = `${process.env.LAVA_BASE_URL}/forward?u=${process.env.MODEL_URL}`;
         const headers = {
@@ -100,30 +101,28 @@ app.post('/sentiment/audio', async (req, res) => {
  
         const requestBody = {
             model: 'claude-haiku-4-5',
-            max_tokens: 100,
+            max_tokens: 500,
             messages: [
                 {
                     role: 'user',
                     content: [
                         {
-                            type: 'image',
-                            source: {
-                                type: 'base64',
-                                media_type: 'image/webp',
-                                data: base64Image.split(',')[1]
-                            }
-                        },
-                        {
                             type: 'text',
-                            text: `For each of the following three following categories, give a score from 1 to 10 regarding how well the user is practicing good public speaking.
-                            A 1 means poor performance (i.e. doesn't look like they're presenting or they're not on the screen) and 10 is good (don't be afraid to give 10s commonly).
-                            This means like looking at the camera when talking (or at least looking near the camera; just as long as it's not far off), and
-                            not fidgeting around or looking distracted. Also, do not deduct points for a slightly blurry camera (deduct if really blurry) or lighting (or anything beyond the user's control).
-                            Be more extreme with your judgements (both positive and negative).
-                            1) Facial expression
-                            2) Eyesight
-                            3) Focus
-                            Format the output as a JSON: {facial_expression: ___, rating: ___, focus: ___}. DO NOT SEND ANYTHING OTHER THAN THE JSON AND NO FORMATTING OUTSIDE OF THE OUTERMOST BRACES.`
+                            text: `You are a presentation coach analyzing a speaker's performance metrics.
+
+                                    Here are the speaker's ratings (each category has: average, minimum, maximum - in this order - on a 1-10 scale):
+                                    - Facial Expression (friendliness & engagement): [${averagedRatings[0].join(', ')}]
+                                    - Eye Contact: [${averagedRatings[1].join(', ')}]
+                                    - Focus (fidgeting & engagement): [${averagedRatings[2].join(', ')}]
+
+                                    Based on these metrics, provide feedback in this exact format:
+                                    1. One bullet point highlighting what the speaker does well
+                                    2. Three bullet points on areas to improve
+
+                                    Each point should be 1-2 sentences, written directly to the speaker, and include specific, actionable advice. For example: "You're fidgeting too much, which makes you appear less confident. Try keeping your hands visible and still, or use controlled gestures to emphasize key points."
+
+                                    Focus on translating the metrics into tangible, observable behaviors the speaker can work on. Do not mention scores anywhere, as the feedback should be primarily qualitative. Jump straight into the bullet points, no need to preface with something like "Your presentation feedback" It
+                                    is good to separate the bullet points with "What you do well:" and "Areas to Improve", though.`
                         },
                     ],
                 },
@@ -137,16 +136,14 @@ app.post('/sentiment/audio', async (req, res) => {
         });
 
         const data = await response.json();
-        const result = getValues(data);
-        console.log(result);
-        //const result = data.choices[0].message.content;
-        // if (!isValidClaudeJsonResponse(data.content[0].text)) {
-        //     data.content[0].text = '```json\n{"speed": 5, "volume": 5, "confidence": 5}\n```'
-        // }
+        console.log(data);
+        const result = data.content[0].text;
+    
         res.json({ result });
     } catch (err) {
         console.error(err);
     }
+
 });
 
 app.listen(PORT, (error) =>{

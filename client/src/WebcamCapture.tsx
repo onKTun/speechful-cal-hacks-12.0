@@ -11,66 +11,10 @@ const WebcamCapture = () => {
     const [visualSentiment, setVisualSentiment] = React.useState(6);
     const [recordedChunks, setRecordedChunks] = React.useState<Blob[]>([]);
     const [visualRunningRating, setVisualRunningRating] = React.useState<number[][]>([]);
-
-    /*const audioCapture = async () => {
-        if (!webcamRef.current?.stream)
-            return;
-        
-        const audioTracks = webcamRef.current.stream.getAudioTracks();
-        if (audioTracks.length === 0)
-            return;
-        
-        const audioStream = new MediaStream(audioTracks);
-        
-        const audioRecorder = new MediaRecorder(audioStream, {
-            mimeType: "audio/webm"
-        });
-        
-        const chunks: Blob[] = [];
-        
-        audioRecorder.addEventListener("dataavailable", (event: BlobEvent) => {
-            if (event.data.size > 0) {
-                chunks.push(event.data);
-            }
-        });
-        
-        audioRecorder.addEventListener("stop", async () => {
-            const blob = new Blob(chunks, { type: "audio/webm" });
-            
-            try {
-                const base64Audio = await blobToBase64(blob);
-                const response = await fetch('http://localhost:3000/sentiment/audio', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ base64Audio: base64Audio }),
-                });
-                const data = await response.json();
-
-                setVisualRunningRating(prev => {
-                    const updated = [...prev, data.result];
-                    if (updated.length > 5) {
-                        updated.shift();
-                    }
-
-                    const sums = updated.reduce(
-                        (acc, arr) => acc.map((v:number, i:number) => v + (arr[i] ?? 0)),
-                        [0, 0, 0]
-                    );
-                    const averages: number[] = sums.map((v: number): number => v / updated.length);
-                    const overallSentiment = averages.reduce((sum:number, val:number) => sum + val, 0) / averages.length;
-                    
-                    setVisualSentiment(overallSentiment);
-                    
-                    return updated;
-                });
-            } catch (err) {
-                console.error(err);
-            }
-        });
-        
-        audioRecorder.start();
-        setTimeout(() => audioRecorder.stop(), 5000);
-    };*/
+    const [feedback, setFeedback] = React.useState("");
+    const [dataCount, setDataCount] = React.useState(0);
+    // [facial_expression], [eye_contact], [focus]. for each array, [average, min, max]
+    const [visualRuntimeRatings, setVisualRuntimeRatings] = React.useState<number[][]>([[6, 6, 6], [6, 6, 6], [6, 6, 6]]);
 
     const videoCapture = async () => {
         if (!webcamRef.current)
@@ -91,8 +35,17 @@ const WebcamCapture = () => {
                 if (data.result[0] === -1) {
                     return prev;
                 }
+                
+                setVisualRuntimeRatings(prevRatings => 
+                    prevRatings.map((category, i) => [
+                        category[0] + data.result[i],
+                        Math.min(category[1], data.result[i]),
+                        Math.max(category[2], data.result[i])
+                    ])
+                );
 
                 const updated = [...prev, data.result];
+                setDataCount(prev => prev + 1);
                 if (updated.length > 4) {
                     updated.shift();
                 }
@@ -142,6 +95,25 @@ const WebcamCapture = () => {
             const url = URL.createObjectURL(blob);
             setVideoURL(url);
         }
+
+        try {
+
+            const averagedRatings = visualRuntimeRatings.map(category => [
+                category[0] / dataCount,
+                category[1],
+                category[2]
+            ]);
+
+            const response = await fetch('http://localhost:3000/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json'},
+                body: JSON.stringify({ averagedRatings }),
+            })
+            const data = await response.json();
+            setFeedback(data.result);
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     const reset = () => {
@@ -150,10 +122,12 @@ const WebcamCapture = () => {
         setVisualSentiment(6);
         setRecordedChunks([]);
         setVisualRunningRating([]);
+        setDataCount(0);
         if (mediaRecorderRef.current) {
             mediaRecorderRef.current.stop();
         }
         setVisualTips("");
+        setVisualRuntimeRatings([[6, 6, 6], [6, 6, 6], [6, 6, 6]]);
     }
 
     React.useEffect(() => {
@@ -195,7 +169,10 @@ const WebcamCapture = () => {
                 </>
             )}
             {videoURL ? (
-                <video controls src={videoURL}></video>
+                <>
+                    <video controls src={videoURL}></video>
+                    <div>{feedback}</div>
+                </>
             ):(
                 <Webcam
                     audio={true}
