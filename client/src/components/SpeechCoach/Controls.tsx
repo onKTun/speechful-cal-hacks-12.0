@@ -22,7 +22,7 @@ export const Controls = ({
       {onToggleHighlighting && (
         <button
           onClick={onToggleHighlighting}
-          className={`p-5 rounded-lg backdrop-blur-md border border-white/20 shadow-lg hover:scale-110 transition-all ${
+          className={`p-5 rounded-lg backdrop-blur-md border border-white/20 shadow-lg hover:scale-110 transition-all cursor-pointer ${
             enableHighlighting 
               ? "bg-yellow-400/20 hover:bg-yellow-400/30" 
               : "bg-white/10 hover:bg-white/20"
@@ -36,7 +36,7 @@ export const Controls = ({
       {/* Pause Button */}
       <button
         onClick={onTogglePause}
-        className="p-5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg hover:scale-110 transition-all hover:bg-white/20"
+        className="p-5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg hover:scale-110 transition-all hover:bg-white/20 cursor-pointer"
       >
         {isPaused ? (
           <Play className="w-7 h-7 text-white" />
@@ -49,9 +49,9 @@ export const Controls = ({
       <Link to="/webcam">
         <button
           onClick={onStop}
-          className="p-5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg hover:scale-110 transition-all hover:bg-white/20"
+          className="p-5 rounded-lg backdrop-blur-md bg-white/10 border border-white/20 shadow-lg text-white hover:text-red-400 hover:scale-110 transition-all hover:bg-white/20 cursor-pointer"
         >
-          <X className="w-7 h-7 text-white hover:text-red-400" />
+          <X className="w-7 h-7 text-whit" />
         </button>
       </Link>
     </div>

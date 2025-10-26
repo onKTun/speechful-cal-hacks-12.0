@@ -34,13 +34,10 @@ export default function Landing() {
             Speechful is your personal AI speech coach, designed to help you speak with confidence, clarity, and impact. Get instant feedback and personalized exercises to master public speaking, and presentations.
           </p>
           <div className="mt-12 flex flex-col sm:flex-row justify-center items-center space-y-6 sm:space-y-0 sm:space-x-6">
-            <Link to="/webcam" className={`w-full sm:w-auto px-10 md:px-12 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl bg-linear-to-r ${isDark ? 'from-pink-400 via-purple-400 to-blue-400 text-slate-900 shadow-purple-400/30 hover:shadow-xl hover:shadow-purple-400/40' : 'from-pink-300 via-purple-300 to-blue-300 text-purple-900 shadow-purple-300/50 hover:shadow-xl hover:shadow-purple-400/60'} hover:scale-105 transition-all duration-300`}>
+            <Link to="/webcam" className={`w-full sm:w-auto px-10 md:px-12 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl bg-linear-to-r cursor-pointer ${isDark ? 'from-pink-400 via-purple-400 to-blue-400 text-slate-900 shadow-purple-400/30 hover:shadow-xl hover:shadow-purple-400/40' : 'from-pink-300 via-purple-300 to-blue-300 text-purple-900 shadow-purple-300/50 hover:shadow-xl hover:shadow-purple-400/60'} hover:scale-105 transition-all duration-300`}>
               Start Your Free Session
             </Link>
-            <button className={`w-full sm:w-auto px-10 md:px-12 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl ${isDark ? 'bg-purple-300/10 border-purple-300/30 text-purple-200 hover:bg-purple-300/20 hover:border-purple-300/50' : 'bg-purple-100 border-2 border-purple-300 text-purple-900 hover:bg-purple-200'} hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2`}>
-              Learn More
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-            </button>
+           
           </div>
         </div>
       </header>

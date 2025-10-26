@@ -12,7 +12,7 @@ export const Timer = ({ elapsedTime, isVisible }: TimerProps) => {
 
   return (
     <div
-      className={`absolute top-6 right-6 transition-opacity duration-500 ${
+      className={`absolute top-12 right-6 z-30 transition-opacity duration-500 ${
         isVisible ? "opacity-100" : "opacity-0 pointer-events-none"
       }`}
     >

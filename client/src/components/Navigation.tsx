@@ -37,30 +37,10 @@ export const Navigation = ({ showBackButton = false }: NavigationProps) => {
             >
               Features
             </a>
-            <a
-              href="#about"
-              className={`text-sm font-medium ${
-                isDark
-                  ? "text-purple-300 hover:text-purple-100"
-                  : "text-purple-600 hover:text-purple-800"
-              } transition-colors`}
-            >
-              About Us
-            </a>
-            <a
-              href="#pricing"
-              className={`text-sm font-medium ${
-                isDark
-                  ? "text-purple-300 hover:text-purple-100"
-                  : "text-purple-600 hover:text-purple-800"
-              } transition-colors`}
-            >
-              Pricing
-            </a>
           </div>
           <button
             onClick={toggleDarkMode}
-            className={`p-2 rounded-lg ${
+            className={`p-2 rounded-lg cursor-pointer ${
               isDark ? "bg-slate-700 hover:bg-slate-600" : "bg-purple-200 hover:bg-purple-300"
             } transition-colors`}
             aria-label="Toggle theme"
@@ -100,7 +80,7 @@ export const Navigation = ({ showBackButton = false }: NavigationProps) => {
           {showBackButton && (
             <Link
               to="/"
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 cursor-pointer ${
                 isDark
                   ? "bg-slate-800/40 border-purple-400/30 text-purple-100 hover:bg-slate-800/60 hover:border-purple-400/50"
                   : "bg-white/60 border-purple-200 text-purple-900 hover:bg-white/80 hover:border-purple-400"
@@ -110,17 +90,7 @@ export const Navigation = ({ showBackButton = false }: NavigationProps) => {
               <span className="font-semibold">Back to Home</span>
             </Link>
           )}
-          {!showBackButton && (
-            <button
-              className={`px-4 md:px-6 py-2 text-sm font-semibold rounded-lg ${
-                isDark
-                  ? "bg-purple-400/20 border-purple-400/40 text-purple-200 hover:bg-purple-400/30"
-                  : "bg-purple-200 border-purple-300 text-purple-800 hover:bg-purple-300"
-              } transition-all`}
-            >
-              Sign Up
-            </button>
-          )}
+          
         </div>
       </div>
     </nav>
