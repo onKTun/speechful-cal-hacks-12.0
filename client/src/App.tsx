@@ -1,4 +1,3 @@
-import './App.css'
 import Landing from './Landing.tsx'
 import WebcamCapture from './WebcamCapture.tsx'
 import { Routes, Route } from 'react-router-dom'
