@@ -108,7 +108,11 @@ app.post('/sentiment', async (req, res) => {
 // Handle stt websocket/deppgram connection
 const setupDeepgram = (ws) => {
   const deepgram = deepgramClient.listen.live({
-    smart_format: true,
+    smart_format: false,
+    interim_results:true,
+    utterance_end_ms: 1000,
+    vad_events: true,
+    endpointing: 300,
     model: "nova-3",
   });
 
@@ -122,7 +126,10 @@ const setupDeepgram = (ws) => {
     console.log("deepgram: connected");
 
     deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
-      console.log("deepgram: transcript received");
+      console.log(
+        "deepgram: transcript received: " +
+          data.channel.alternatives[0].transcript
+      );
       console.log("ws: transcript sent to client");
       ws.send(JSON.stringify(data));
     });

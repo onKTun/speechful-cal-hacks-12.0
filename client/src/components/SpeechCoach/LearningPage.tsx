@@ -29,8 +29,8 @@ const LearningPage = () => {
   const intervalRef = useRef<number | null>(null);
   const webSocket = useRef<WebSocket | undefined>(undefined)
 
-  const threshold = 0.9
-
+  const threshold = 0.85
+ 
   const getMicrophone = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -161,11 +161,28 @@ const LearningPage = () => {
       if (transcription.length == 0) {
         return;
       }
-      const transcriptWords = slicedTranscript.slice(currentWordIndex, currentWordIndex + transcription.length)
-      const score = compareTextAccuracy(transcription.join(' '), transcriptWords.join(' '))
 
-      if (score >= threshold) {
-        setCurrentWordIndex(currentWordIndex + transcription.length)
+      const endIndex1 = Math.min(slicedTranscript.length, currentWordIndex + transcription.length + 5);
+      const endIndex2 = Math.min(slicedTranscript.length, currentWordIndex + transcription.length);
+      const half = Math.floor(transcription.length/2)
+      const transcriptWordsDelayed = slicedTranscript.slice(Math.max(0, currentWordIndex - 5), currentWordIndex + transcription.length)
+      const transcriptWordsAhead = slicedTranscript.slice(currentWordIndex, endIndex1);
+      const transcriptWordsMiddle = slicedTranscript.slice(Math.max(0, currentWordIndex - half), Math.min(slicedTranscript.length, currentWordIndex + half))
+      const transcriptWords = slicedTranscript.slice(currentWordIndex, endIndex2 )
+      const score1 = compareTextAccuracy(transcription.join(' '), transcriptWords.join(' '))
+      const score2 = compareTextAccuracy(transcription.join(' '), transcriptWordsDelayed.join(' '))
+      const score3 = compareTextAccuracy(transcription.join(' '), transcriptWordsAhead.join(' '))
+      const score4 = compareTextAccuracy(transcription.join(' '), transcriptWordsMiddle.join(' '))
+      const scores = [
+        { score: score1, start: currentWordIndex, end: endIndex2 },
+        { score: score2, start: Math.max(0, currentWordIndex - 5), end: currentWordIndex + transcription.length },
+        { score: score3, start: currentWordIndex, end: endIndex1 },
+        { score: score4, start: Math.max(0, currentWordIndex - half), end: Math.min(slicedTranscript.length, currentWordIndex + half) }
+      ];
+      const maxScore = scores.reduce((max, curr) => curr.score > max.score ? curr : max, scores[0]);
+      console.log(`Best match: score=${maxScore.score}, start=${maxScore.start}, end=${maxScore.end}`);
+      if (maxScore.score >= threshold) {
+        setCurrentWordIndex(maxScore.end)
       }
     }
 

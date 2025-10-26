@@ -21,7 +21,7 @@ export const Caption = ({ text, isVisible = true }: CaptionProps) => {
                     : "bg-white/30 border-purple-200/30"
                     }`}
             >
-                <p className="text-3xl font-semibold tracking-wider text-white">
+                <p className="text-xl font-semibold tracking-wider text-white">
                     {text}
                 </p>
             </div>
