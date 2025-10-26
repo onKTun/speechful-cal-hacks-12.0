@@ -10,37 +10,19 @@ app.use(express.json());
 const PORT = 3000;
 
 // Checks validness of response from Claude (ideally, this should always return true, but we never know)
-function isValidClaudeJsonResponse(str) {
+function getValues(str) {
     // Check if the response is a string and follows the expected format
-    if (typeof str !== "string") return false;
+    const text = str.content[0].text;
 
-    // Check the triple-backtick JSON block
-    const regex = /^```json\s*\n(\{[\s\S]*\})\s*\n```$/;
-    const match = str.match(regex);
+    const match = text.match(/```json\s*([\s\S]*?)\s*```/);
 
-    if (!match) return false;
-
-    let obj;
-    try {
-        obj = JSON.parse(match[1]);
-    } catch (e) {
-        return false;
+    if (match) {
+        const jsonString = match[1];
+        const data = JSON.parse(jsonString);
+        return [data.facial_expression, data.eyesight, data.focus];
     }
-
-    // Check the required fields and that their values are integers 1-10
-    const keys = ['facial_expression', 'eyesight', 'focus'];
-    for (const key of keys) {
-        if (!(key in obj)) return false;
-        if (
-            typeof obj[key] !== 'number' ||
-            !Number.isInteger(obj[key]) ||
-            obj[key] < 1 ||
-            obj[key] > 10
-        ) {
-            return false;
-        }
-    }
-    return true;
+    console.log(text);
+    return [-1, -1, -1];
 }
 
 app.post('/sentiment', async (req, res) => {
@@ -56,7 +38,7 @@ app.post('/sentiment', async (req, res) => {
  
         const requestBody = {
             model: 'claude-haiku-4-5',
-            max_tokens: 200,
+            max_tokens: 100,
             messages: [
                 {
                     role: 'user',
@@ -74,8 +56,8 @@ app.post('/sentiment', async (req, res) => {
                             text: `For each of the following three following categories, give a score from 1 to 10 regarding how well the user is practicing good public speaking.
                             A 1 means poor performance (i.e. doesn't look like they're presenting or they're not on the screen) and 10 is good (don't be afraid to give 10s commonly).
                             This means like looking at the camera when talking (or at least looking near the camera; just as long as it's not far off), and
-                            not fidgeting around or looking distracted. Also, do not deduct points for a slightly blurry camera (deduct if really blurry) or lighting (or anything beyond the user's control). Do not deduct
-                            points for closed eyes (since they might be blinking).
+                            not fidgeting around or looking distracted. Also, do not deduct points for a slightly blurry camera (deduct if really blurry) or lighting (or anything beyond the user's control).
+                            Be more extreme with your judgements (both positive and negative).
                             1) Facial expression
                             2) Eyesight
                             3) Focus
@@ -93,12 +75,13 @@ app.post('/sentiment', async (req, res) => {
         });
 
         const data = await response.json();
-        console.log(data);
+        const result = getValues(data);
+        console.log(result);
         //const result = data.choices[0].message.content;
         // if (!isValidClaudeJsonResponse(data.content[0].text)) {
         //     data.content[0].text = '```json\n{"facial_expression": 5, "eyesight": 5, "focus": 5}\n```'
         // }
-        res.json({ data });
+        res.json({ result });
     } catch (err) {
         console.error(err);
     }
