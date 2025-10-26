@@ -1,125 +1,118 @@
 import { useEffect, useRef, useState } from "react"
 
 export default function LearningPageDev() {
-    const [isRecording, setRecording] = useState(false)
+    const [isMicOpen, setMicStatus] = useState(false)
     const [output, setOutput] = useState("")
-    const ws = useRef<WebSocket | null>(null)
-    const mediaRecorder = useRef<MediaRecorder | null>(null)
-    const mediaStream = useRef<MediaStream | null>(null)
+    const microphone = useRef<MediaRecorder | undefined>(undefined)
+    const listenButton = useRef<HTMLButtonElement | null>(null)
 
-    // this function is used to send audio to the backend
-    const sendAudioAction = async (event: BlobEvent) => {
-        if (event.data.size > 0 && ws.current?.readyState === WebSocket.OPEN) {
-            const audioBuffer = await event.data.arrayBuffer();
-            //console.log("sending audio data...", audioBuffer.byteLength, "bytes")
-            ws.current.send(audioBuffer);
-        }
+    const openMicrophone = async (microphone: MediaRecorder, socket: WebSocket) => {
+        return new Promise((resolve: any) => {
+            microphone.onstart = () => {
+                console.log("client: microphone opened");
+                document.body.classList.add("recording");
+                resolve();
+            };
+
+            microphone.onstop = () => {
+                console.log("client: microphone closed");
+                document.body.classList.remove("recording");
+            };
+
+            microphone.ondataavailable = (event: any) => {
+                console.log("client: microphone data received");
+                if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+                    socket.send(event.data);
+                }
+            };
+
+            microphone.start(1000);
+            setMicStatus(true)
+        });
+    }
+
+    const closeMicrophone = async (microphone: MediaRecorder) => {
+        microphone.stop();
+        setMicStatus(false)
     }
 
     useEffect(() => {
-        const startRecording = async () => {
+        const socket = new WebSocket("ws://localhost:3000");
+
+        //once the websocket is open, this function is called to assign the listening toggle button it's logic
+        const start = async (socket: WebSocket) => {
+            console.log("client: waiting to open microphone");
+
+            listenButton.current?.addEventListener("click", async () => {
+
+                if (!microphone.current) {
+                    try {
+                        microphone.current = await getMicrophone();
+
+                    } catch (error) {
+                        console.error("error getting microphone:", error);
+                    }
+                }
+
+                if (!isMicOpen && microphone.current) {
+                    await openMicrophone(microphone.current, socket);
+                }
+                else {
+                    if (microphone.current) {
+                        await closeMicrophone(microphone.current);
+                    }
+                    //setMicStatus(false)
+                    microphone.current = undefined;
+                }
+            });
+        }
+
+        socket.addEventListener("open", async () => {
+            console.log("client: connected to server");
+            await start(socket);
+        });
+
+        //listener for recieving 
+        socket.addEventListener("message", (event) => {
+            if (event.data === "") {
+                return;
+            }
+
+            let data;
             try {
-                // Create WebSocket connection
-                console.debug("creating a websocket connection")
-                const socket = new WebSocket("ws://localhost:8080");
-                ws.current = socket
-
-                // Wait for WebSocket to open before starting recording
-                await new Promise<void>((resolve, reject) => {
-                    socket.onopen = () => {
-                        console.debug("WebSocket connected")
-                        resolve()
-                    }
-                    socket.onerror = (error) => {
-                        console.error("WebSocket error:", error)
-                        reject(error)
-                    }
-                    // Timeout after 5 seconds
-                    setTimeout(() => reject(new Error("WebSocket connection timeout")), 5000)
-                })
-
-                //when the socket recieves the transcript
-                socket.onmessage = (event) => {
-                    console.debug("Transcript:", event.data);
-                    setOutput(prev => prev + " " + event.data)
-                };
-
-                socket.onclose = (event) => {
-                    console.log("WebSocket closed:", event.code, event.reason)
-                    setRecording(false)
-                };
-
-                // Create recording device
-                console.debug("starting recording...")
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaStream.current = stream
-
-                mediaRecorder.current = new MediaRecorder(stream, {
-                    mimeType: "audio/webm;codecs=opus"
-                });
-                //send audio when there is data available
-                mediaRecorder.current.addEventListener("dataavailable", sendAudioAction);
-
-                mediaRecorder.current.onerror = (event) => {
-                    console.error("MediaRecorder error:", event)
-                    setRecording(false)
-                }
-
-                mediaRecorder.current.start(300); // send audio chunks every x milliseconds
-            } catch (error) {
-                console.error("Failed to start recording:", error)
-                setRecording(false)
-                // Clean up on error
-                stopRecording()
-            }
-        }
-
-        const stopRecording = () => {
-            console.debug("stopping recording...")
-
-            // Remove event listener before stopping
-            if (mediaRecorder.current) {
-                mediaRecorder.current.removeEventListener("dataavailable", sendAudioAction)
-                if (mediaRecorder.current.state !== "inactive") {
-                    mediaRecorder.current.stop()
-                }
-                mediaRecorder.current = null
+                data = JSON.parse(event.data);
+            } catch (e) {
+                console.error("Failed to parse JSON:", e);
+                return;
             }
 
-            // Stop all media stream tracks
-            if (mediaStream.current) {
-                mediaStream.current.getTracks().forEach(track => track.stop())
-                mediaStream.current = null
+            //this handles where the transcript data is going!
+            if (data && data.channel && data.channel.alternatives[0].transcript !== "") {
+                setOutput(data.channel.alternatives[0].transcript)
             }
+        });
 
-            // Close WebSocket
-            if (ws.current) {
-                console.debug("Closing the websocket")
-                if (ws.current.readyState === WebSocket.OPEN ||
-                    ws.current.readyState === WebSocket.CONNECTING) {
-                    ws.current.close()
-                }
-                ws.current = null
-            }
-        }
-
-        if (isRecording) {
-            startRecording()
-        } else {
-            stopRecording()
-        }
-
-        return () => {
-            stopRecording();
-        }
-    }, [isRecording, sendAudioAction])
+        socket.addEventListener("close", () => {
+            console.log("client: disconnected from server");
+        });
+    }, [])
 
     return (
         <div>
-            <button onClick={() => { setRecording(!isRecording) }}>
-                Recording status: {isRecording + ""}, click to toggle
+            <button ref={listenButton}>
+                Click to toggle listening. Status: {isMicOpen + ""}
             </button>
             <div>{output}</div>
         </div>
     )
+}
+
+async function getMicrophone() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        return new MediaRecorder(stream, { mimeType: "audio/webm" });
+    } catch (error) {
+        console.error("error accessing microphone:", error);
+        throw error;
+    }
 }
