@@ -32,6 +32,7 @@ const RehearsalCapture = ({ isStarted, isHovered = false, webcamRef: externalWeb
                             ref={webcamRef}
                             screenshotFormat="image/webp"
                             muted
+                            style={{ transform: "scaleX(-1)" }}
                             className="w-full h-full object-cover"
                             videoConstraints={{
                                 facingMode: "user",

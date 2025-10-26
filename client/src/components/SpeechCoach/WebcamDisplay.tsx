@@ -20,6 +20,7 @@ export const WebcamDisplay = ({ webcamRef, isStarted, isHovered = false }: Webca
             audio={false}
             screenshotFormat="image/webp"
             className="w-full h-full object-cover"
+            style={{ transform: "scaleX(-1)" }}
             videoConstraints={{
               facingMode: "user",
             }}

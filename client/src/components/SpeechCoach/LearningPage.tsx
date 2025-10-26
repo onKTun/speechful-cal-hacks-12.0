@@ -152,8 +152,8 @@ const LearningPage = () => {
           />
         )}
 
-        {/* Sentiment Display */}
-        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} />
+        {/* Sentiment Display
+        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />
