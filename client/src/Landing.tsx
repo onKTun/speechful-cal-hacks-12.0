@@ -1,23 +1,10 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useTheme } from './ThemeContext.tsx';
 import './tailwind.css'
 
 
 export default function Landing() {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    // Apply dark class to html element for Tailwind dark mode
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDark]);
-
-  const toggleDarkMode = () => {
-    setIsDark(!isDark);
-  };
+  const { isDark, toggleDarkMode } = useTheme();
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-pink-50'} transition-colors duration-500`}>
@@ -66,13 +53,13 @@ export default function Landing() {
           </div>
 
           <h1 className={`text-3xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6 ${isDark ? 'text-purple-100' : 'text-purple-900'}`}>
-            Elevate Your Voice with{' '}
+            Elevate Your Presentation with{' '}
             <span className={`text-transparent bg-clip-text bg-linear-to-r ${isDark ? 'from-pink-300 to-purple-300' : 'from-pink-400 to-purple-500'}`}>
               Speechful
             </span>
           </h1>
           <p className={`text-base md:text-lg lg:text-xl ${isDark ? 'text-purple-200' : 'text-purple-700'} max-w-3xl mx-auto leading-relaxed font-light`}>
-            Speechful is your personal AI speech coach, designed to help you speak with confidence, clarity, and impact. Get instant feedback and personalized exercises to master public speaking, presentations, and daily conversations.
+            Speechful is your personal AI speech coach, designed to help you speak with confidence, clarity, and impact. Get instant feedback and personalized exercises to master public speaking, and presentations.
           </p>
           <div className="mt-12 flex flex-col sm:flex-row justify-center items-center space-y-6 sm:space-y-0 sm:space-x-6">
             <Link to="/webcam" className={`w-full sm:w-auto px-10 md:px-12 py-3 md:py-4 text-base md:text-lg font-semibold rounded-xl bg-linear-to-r ${isDark ? 'from-pink-400 via-purple-400 to-blue-400 text-slate-900 shadow-purple-400/30 hover:shadow-xl hover:shadow-purple-400/40' : 'from-pink-300 via-purple-300 to-blue-300 text-purple-900 shadow-purple-300/50 hover:shadow-xl hover:shadow-purple-400/60'} hover:scale-105 transition-all duration-300`}>
