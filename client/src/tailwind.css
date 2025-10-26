@@ -1,1 +1,21 @@
 @import "tailwindcss";
+
+/* Custom scrollbar styling for learning overlay transcript */
+.scrollbar-glow::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollbar-glow::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.scrollbar-glow::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.scrollbar-glow::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
+}

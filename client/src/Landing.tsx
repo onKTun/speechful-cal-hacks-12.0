@@ -1,44 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useTheme } from './ThemeContext.tsx';
+import { Navigation } from './components/Navigation';
 import './tailwind.css'
 
 
 export default function Landing() {
-  const { isDark, toggleDarkMode } = useTheme();
+  const { isDark } = useTheme();
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-pink-50'} transition-colors duration-500`}>
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-40 px-6 py-6 md:px-12 ${isDark ? 'bg-slate-900/90' : 'bg-pink-50/90'} backdrop-blur-sm`}>
-        <div className="flex justify-between items-center max-w-7xl mx-auto">
-          <div className={`text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r ${isDark ? 'from-pink-300 via-purple-300 to-blue-300' : 'from-pink-400 via-purple-400 to-blue-400'}`}>
-            Speechful
-          </div>
-          <div className="flex items-center gap-4 md:gap-6">
-            <div className="hidden md:flex gap-6">
-              <a href="#features" className={`text-sm font-medium ${isDark ? 'text-purple-300 hover:text-purple-100' : 'text-purple-600 hover:text-purple-800'} transition-colors`}>Features</a>
-              <a href="#about" className={`text-sm font-medium ${isDark ? 'text-purple-300 hover:text-purple-100' : 'text-purple-600 hover:text-purple-800'} transition-colors`}>About Us</a>
-              <a href="#pricing" className={`text-sm font-medium ${isDark ? 'text-purple-300 hover:text-purple-100' : 'text-purple-600 hover:text-purple-800'} transition-colors`}>Pricing</a>
-            </div>
-            <button
-              onClick={toggleDarkMode}
-              className={`p-2 rounded-lg ${isDark ? 'bg-slate-700 hover:bg-slate-600' : 'bg-purple-200 hover:bg-purple-300'} transition-colors`}
-              aria-label="Toggle theme"
-            >
-              {isDark ? (
-                <svg className="w-6 h-6 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h1M3 12H2m15.325-4.675l.707-.707M6.025 17.675l-.707.707M18.364 18.364l.707.707M5.636 5.636l-.707-.707M12 18a6 6 0 100-12 6 6 0 000 12z"></path></svg>
-              ) : (
-                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-              )}
-            </button>
-            <button
-              className={`px-4 md:px-6 py-2 text-sm font-semibold rounded-lg ${isDark ? 'bg-purple-400/20 border-purple-400/40 text-purple-200 hover:bg-purple-400/30' : 'bg-purple-200 border-purple-300 text-purple-800 hover:bg-purple-300'} transition-all`}
-            >
-              Sign Up
-            </button>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
       <header className="relative pt-32 pb-20 md:pt-40 md:pb-24 text-center overflow-hidden">
         <div className={`absolute top-[10%] right-[15%] w-96 h-96 md:w-[500px] md:h-[500px] ${isDark ? 'bg-pink-400/20' : 'bg-pink-300/40'} rounded-full blur-3xl`}></div>
         <div className={`absolute bottom-[10%] left-[10%] w-[500px] h-[500px] md:w-[600px] md:h-[600px] ${isDark ? 'bg-purple-400/25' : 'bg-purple-300/50'} rounded-full blur-3xl`}></div>
