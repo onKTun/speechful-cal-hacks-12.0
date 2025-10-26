@@ -3,6 +3,7 @@ import { FreeSessionSplash } from './components/SpeechCoach/FreeSessionSplash'
 import RehearsalPage from './components/SpeechCoach/RehearsalPage'
 import LearningPage from './components/SpeechCoach/LearningPage'
 import { Routes, Route } from 'react-router-dom'
+import LearningPageDev from './learning/LearningPage.tsx'
 
 function App() {
 
@@ -12,6 +13,7 @@ function App() {
       <Route path="/webcam" element={<FreeSessionSplash />} />
       <Route path="/webcam/rehearsal" element={<RehearsalPage />} />
       <Route path="/webcam/learning" element={<LearningPage />} />
+      <Route path="/learning/dev" element={<LearningPageDev />} />
     </Routes>
   )
 }
