@@ -7,8 +7,10 @@ import { useSentimentCapture } from "../../hooks/useSentimentCapture";
 import { SetupScreen } from "./SetupScreen";
 import { SessionScreen } from "./SessionScreen";
 import { EmojiOverlay } from "./EmojiOverlay";
+import { SentimentDisplay } from "./SentimentDisplay";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
+import { SuggestionDisplay } from "./SuggestionDisplay";
 import RehearsalCapture from "../../RehearsalCapture";
 
 const RehearsalPage = () => {
@@ -26,7 +28,7 @@ const RehearsalPage = () => {
   const intervalRef = useRef<number | null>(null);
 
   // Use custom hook for sentiment capture
-  const sentiment = useSentimentCapture(webcamRef, isStarted, isPaused);
+  const { sentiment, suggestion } = useSentimentCapture(webcamRef, isStarted, isPaused);
 
   // Auto-advance word highlighting when enabled and session is running
   useEffect(() => {
@@ -144,6 +146,12 @@ const RehearsalPage = () => {
             enableHighlighting={enableHighlighting}
           />
         )}
+
+        {/* Sentiment Display 
+        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
+
+        {/* Suggestion Display */}
+        <SuggestionDisplay suggestion={suggestion} isVisible={isStarted}/>
 
         {/* Emoji Overlay based on Sentiment */}
         <EmojiOverlay sentiment={sentiment} isVisible={isStarted} />
