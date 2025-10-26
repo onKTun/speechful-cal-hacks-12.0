@@ -74,8 +74,8 @@ app.post('/sentiment', async (req, res) => {
                             text: `For each of the following three following categories, give a score from 1 to 10 regarding how well the user is practicing good public speaking.
                             A 1 means poor performance (i.e. doesn't look like they're presenting or they're not on the screen) and 10 is good (don't be afraid to give 10s commonly).
                             This means like looking at the camera when talking (or at least looking near the camera; just as long as it's not far off), and
-                            not fidgeting around or looking distracted. Also, do not deduct points for a slightly blurry camera (deduct if really blurry) or lighting (or anything beyond the user's control). Do not deduct
-                            points for closed eyes (since they might be blinking).
+                            not fidgeting around or looking distracted. Also, do not deduct points for a slightly blurry camera (deduct if really blurry) or lighting (or anything beyond the user's control). 
+                            Do not deduct points for closed eyes (since they might be blinking).
                             1) Facial expression
                             2) Eyesight
                             3) Focus
