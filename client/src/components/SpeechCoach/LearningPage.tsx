@@ -1,29 +1,27 @@
-import { useState, useEffect, useRef } from "react";
+ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Webcam from "react-webcam";
 import { Home } from "lucide-react";
-import "./tailwind.css";
-import { useTheme } from "./ThemeContext";
-import { useSentimentCapture } from "./hooks/useSentimentCapture";
-import { WebcamDisplay } from "./components/SpeechCoach/WebcamDisplay";
-import { SetupScreen } from "./components/SpeechCoach/SetupScreen";
-import { SessionScreen } from "./components/SpeechCoach/SessionScreen";
-import { SentimentDisplay } from "./components/SpeechCoach/SentimentDisplay";
-import { Timer } from "./components/SpeechCoach/Timer";
-import { Controls } from "./components/SpeechCoach/Controls";
-import type { Mode, Difficulty } from "./types";
+import { useTheme } from "../../ThemeContext";
+import { useSentimentCapture } from "../../hooks/useSentimentCapture";
+import { WebcamDisplay } from "./WebcamDisplay";
+import { SetupScreen } from "./SetupScreen";
+import { SessionScreen } from "./SessionScreen";
+import { SentimentDisplay } from "./SentimentDisplay";
+import { Timer } from "./Timer";
+import { Controls } from "./Controls";
 
-const SpeechCoach = () => {
+const LearningPage = () => {
   const { isDark } = useTheme();
   const [transcript, setTranscript] = useState("");
-  const [mode, setMode] = useState<Mode | "">("");
-  const [difficulty, setDifficulty] = useState<Difficulty>("easy");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [isStarted, setIsStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [showTranscript, setShowTranscript] = useState(false);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [enableHighlighting, setEnableHighlighting] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const webcamRef = useRef<Webcam>(null);
   const intervalRef = useRef<number | null>(null);
 
@@ -48,25 +46,20 @@ const SpeechCoach = () => {
     }
   }, [isStarted, isPaused, enableHighlighting, showTranscript, transcript]);
 
-  // Handle timer and transcript visibility
+  // Handle timer and transcript visibility - learning mode uses difficulty-based delays
   useEffect(() => {
     if (isStarted && !isPaused) {
       intervalRef.current = setInterval(() => {
         setElapsedTime((prev) => {
           const newTime = prev + 1;
-          // In rehearsal mode, show transcript immediately
-          if (mode === "rehearsal") {
+          // In learning mode, use difficulty-based delays
+          const delays: { [key: string]: number } = {
+            easy: 5,
+            medium: 15,
+            hard: 30,
+          };
+          if (newTime >= delays[difficulty]) {
             setShowTranscript(true);
-          } else {
-            // In learning mode, use difficulty-based delays
-            const delays: { [key: string]: number } = {
-              easy: 5,
-              medium: 15,
-              hard: 30,
-            };
-            if (newTime >= delays[difficulty]) {
-              setShowTranscript(true);
-            }
           }
           return newTime;
         });
@@ -81,7 +74,7 @@ const SpeechCoach = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isStarted, isPaused, difficulty, mode]);
+  }, [isStarted, isPaused, difficulty]);
 
   const handleStart = () => {
     setIsStarted(true);
@@ -110,11 +103,11 @@ const SpeechCoach = () => {
         isDark ? "bg-slate-900" : "bg-pink-50"
       } transition-colors duration-500`}
     >
-      {/* Back to Home Button - Only visible on splash page */}
+      {/* Back to Free Session Selection Button - Only visible on setup screen */}
       {!isStarted && (
         <div className="fixed top-6 right-6 z-50">
           <Link
-            to="/"
+            to="/webcam"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 cursor-pointer ${
               isDark
                 ? "bg-slate-800/40 border-purple-400/30 text-purple-100 hover:bg-slate-800/60 hover:border-purple-400/50"
@@ -122,33 +115,36 @@ const SpeechCoach = () => {
             } hover:scale-105`}
           >
             <Home className="w-5 h-5" />
-            <span className="font-semibold">Back to Home</span>
+            <span className="font-semibold">Back to Mode Selection</span>
           </Link>
         </div>
       )}
       
       <div className="relative min-h-screen overflow-hidden pt-0">
         {/* Webcam Display */}
-        <WebcamDisplay webcamRef={webcamRef} isStarted={isStarted} />
+        <WebcamDisplay webcamRef={webcamRef} isStarted={isStarted} isHovered={isHovered} />
 
         {/* Setup Screen */}
         {!isStarted && (
           <SetupScreen
             transcript={transcript}
-            mode={mode}
+            mode="learning"
             difficulty={difficulty}
             onTranscriptChange={setTranscript}
-            onModeChange={setMode}
+            onModeChange={() => {}} // Mode is fixed to learning
             onDifficultyChange={setDifficulty}
             onStart={handleStart}
+            hideModeSelection={true}
+            onButtonHover={() => setIsHovered(true)}
+            onButtonUnhover={() => setIsHovered(false)}
           />
         )}
 
         {/* Session Screen */}
-        {isStarted && mode && (
+        {isStarted && (
           <SessionScreen
             transcript={transcript}
-            mode={mode as Mode}
+            mode="learning"
             difficulty={difficulty}
             showTranscript={showTranscript}
             currentWordIndex={currentWordIndex}
@@ -156,8 +152,8 @@ const SpeechCoach = () => {
           />
         )}
 
-        {/* Sentiment Display */}
-        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} />
+        {/* Sentiment Display
+        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />
@@ -177,4 +173,5 @@ const SpeechCoach = () => {
   );
 };
 
-export default SpeechCoach;
+export default LearningPage;
+
