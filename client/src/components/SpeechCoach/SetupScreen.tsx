@@ -10,6 +10,9 @@ interface SetupScreenProps {
   onModeChange: (value: Mode) => void;
   onDifficultyChange: (value: Difficulty) => void;
   onStart: () => void;
+  hideModeSelection?: boolean;
+  onButtonHover?: () => void;
+  onButtonUnhover?: () => void;
 }
 
 export const SetupScreen = ({
@@ -20,6 +23,9 @@ export const SetupScreen = ({
   onModeChange,
   onDifficultyChange,
   onStart,
+  hideModeSelection = false,
+  onButtonHover,
+  onButtonUnhover,
 }: SetupScreenProps) => {
   const { isDark } = useTheme();
 
@@ -70,6 +76,7 @@ export const SetupScreen = ({
         </div>
 
         {/* Mode Selection */}
+        {!hideModeSelection && (
         <div>
           <label
             className={`block text-sm font-semibold mb-3 text-left ${
@@ -116,6 +123,7 @@ export const SetupScreen = ({
               "• Practice with gradual transcript reveals based on difficulty"}
           </p>
         </div>
+        )}
 
         {/* Difficulty Selection - Only show when mode is learning */}
         <div
@@ -183,6 +191,8 @@ export const SetupScreen = ({
         <div className="flex justify-center pt-4">
           <button
             onClick={onStart}
+            onMouseEnter={onButtonHover}
+            onMouseLeave={onButtonUnhover}
             disabled={!transcript.trim() || !mode}
             className={`group w-full sm:w-auto px-16 py-5 rounded-2xl bg-linear-to-r ${
               isDark

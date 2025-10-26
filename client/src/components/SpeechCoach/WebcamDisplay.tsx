@@ -4,29 +4,28 @@ import { useTheme } from "../../ThemeContext";
 interface WebcamDisplayProps {
   webcamRef: React.RefObject<Webcam | null>;
   isStarted: boolean;
+  isHovered?: boolean;
 }
 
-export const WebcamDisplay = ({ webcamRef, isStarted }: WebcamDisplayProps) => {
+export const WebcamDisplay = ({ webcamRef, isStarted, isHovered = false }: WebcamDisplayProps) => {
   const { isDark } = useTheme();
 
   return (
     <>
       {/* Webcam - Full Screen */}
-      <div
-        className={`absolute inset-0 transition-opacity duration-500 ${
-          isStarted ? "opacity-100" : "opacity-0"
-        }`}
-      >
-        <Webcam
-          ref={webcamRef}
-          audio={false}
-          screenshotFormat="image/webp"
-          className="w-full h-full object-cover"
-          videoConstraints={{
-            facingMode: "user",
-          }}
-        />
-      </div>
+      {(isStarted || isHovered) && (
+        <div className={`absolute inset-0 transition-opacity duration-500 ${isStarted ? "opacity-100 z-10" : "opacity-0 -z-10"}`}>
+          <Webcam
+            ref={webcamRef}
+            audio={false}
+            screenshotFormat="image/webp"
+            className="w-full h-full object-cover"
+            videoConstraints={{
+              facingMode: "user",
+            }}
+          />
+        </div>
+      )}
 
       {/* Pastel Overlay when not started */}
       {!isStarted && (
