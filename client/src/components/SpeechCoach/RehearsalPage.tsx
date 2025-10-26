@@ -8,11 +8,8 @@ import { useVisualSentiment } from "../../hooks/useVisualSentiment";
 import { SetupScreen } from "./SetupScreen";
 import { SessionScreen } from "./SessionScreen";
 import { EmojiOverlay } from "./EmojiOverlay";
-<<<<<<< HEAD
-import { VisualSuggestion } from "./VisualSuggestion";
-=======
 import { SentimentDisplay } from "./SentimentDisplay";
->>>>>>> main
+import { VisualSuggestion } from "./VisualSuggestion";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
 import { SuggestionDisplay } from "./SuggestionDisplay";
@@ -32,13 +29,8 @@ const RehearsalPage = () => {
   const webcamRef = useRef<Webcam>(null);
   const intervalRef = useRef<number | null>(null);
 
-<<<<<<< HEAD
   // Use custom hook for visual sentiment capture with suggestions
   const visualSentiment = useVisualSentiment(webcamRef, isStarted, isPaused);
-=======
-  // Use custom hook for sentiment capture
-  const { sentiment, suggestion } = useSentimentCapture(webcamRef, isStarted, isPaused);
->>>>>>> main
 
   // Auto-advance word highlighting when enabled and session is running
   useEffect(() => {
