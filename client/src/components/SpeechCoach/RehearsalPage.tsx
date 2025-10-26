@@ -8,8 +8,6 @@ import { useVisualSentiment } from "../../hooks/useVisualSentiment";
 import { SetupScreen } from "./SetupScreen";
 import { SessionScreen } from "./SessionScreen";
 import { EmojiOverlay } from "./EmojiOverlay";
-import { SentimentDisplay } from "./SentimentDisplay";
-import { VisualSuggestion } from "./VisualSuggestion";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
 import { SuggestionDisplay } from "./SuggestionDisplay";
@@ -153,13 +151,10 @@ const RehearsalPage = () => {
         <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
 
         {/* Suggestion Display */}
-        <SuggestionDisplay suggestion={suggestion} isVisible={isStarted}/>
+        <SuggestionDisplay suggestion={visualSentiment.suggestion} isVisible={isStarted}/>
 
         {/* Emoji Overlay based on Sentiment */}
         <EmojiOverlay sentiment={visualSentiment.sentiment.toString()} isVisible={isStarted} />
-
-        {/* Visual Suggestion Display */}
-        <VisualSuggestion suggestion={visualSentiment.suggestion} isVisible={isStarted} />
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />
