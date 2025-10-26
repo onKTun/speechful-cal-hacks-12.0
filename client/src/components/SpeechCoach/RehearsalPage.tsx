@@ -12,6 +12,8 @@ import { Timer } from "./Timer";
 import { Controls } from "./Controls";
 import { SuggestionDisplay } from "./SuggestionDisplay";
 import RehearsalCapture from "../../RehearsalCapture";
+import { SentimentDisplay } from "./SentimentDisplay";
+import { VisualSuggestion } from "./VisualSuggestion";
 
 const RehearsalPage = () => {
   const { isDark } = useTheme();
@@ -149,6 +151,9 @@ const RehearsalPage = () => {
 
         {/* Sentiment Display 
         <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
+
+        {/* Visual Suggestion Display */}
+        <VisualSuggestion suggestion={visualSentiment.suggestion} isVisible={isStarted} />
 
         {/* Suggestion Display */}
         <SuggestionDisplay suggestion={visualSentiment.suggestion} isVisible={isStarted}/>
