@@ -64,8 +64,11 @@ wss.on("connection", (client) => {
     closeAll();
   });
 
-  deepgram.on("close", () => {
-    console.log("🔌 Deepgram connection closed");
+
+  deepgram.on("close", (code, reason) => {
+    console.log(`Deepgram closed connection: ${code} - ${reason}`);
     closeAll();
+    // Optional: try reconnecting here
   });
+ 
 });
