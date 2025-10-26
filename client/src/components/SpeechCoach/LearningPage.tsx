@@ -9,11 +9,13 @@ import { SessionScreen } from "./SessionScreen";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
 import { Caption } from "./Captions";
+import { processTranscript, compareTextAccuracy } from "../../learning/utils/processTranscript";
 
 const LearningPage = () => {
   const { isDark } = useTheme();
-  const [transcript, setTranscript] = useState("");
-  const [transcrptionOutput, setTranscriptionOutput] = useState("")
+  const [transcript, setTranscript] = useState<string>("");
+  const [slicedTranscript, setSlicedTranscript] = useState<string[]>([""]); //processed version of the transcript
+  const [transcrptionOutput, setTranscriptionOutput] = useState<string[]>([""]) //transcription output is always processed
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [isStarted, setIsStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -26,6 +28,8 @@ const LearningPage = () => {
   const microphone = useRef<MediaRecorder | undefined>(undefined)
   const intervalRef = useRef<number | null>(null);
   const webSocket = useRef<WebSocket | undefined>(undefined)
+
+  const threshold = 0.9
 
   const getMicrophone = async () => {
     try {
@@ -142,7 +146,8 @@ const LearningPage = () => {
 
       //this handles where the transcript data is going!
       if (data && data.channel && data.channel.alternatives[0].transcript !== "") {
-        setTranscriptionOutput(data.channel.alternatives[0].transcript)
+        const output = processTranscript(data.channel.alternatives[0].transcript, 1) 
+        setTranscriptionOutput(output)
       }
     });
 
@@ -150,7 +155,24 @@ const LearningPage = () => {
       console.log("client: disconnected from server");
     });
   }, [])
+  // Track user location in transcript
+  useEffect(() => {
+    const trackTranscriptLocation = (transcription: string[]) => {
+      if (transcription.length == 0) {
+        return;
+      }
+      const transcriptWords = slicedTranscript.slice(currentWordIndex, currentWordIndex + transcription.length)
+      const score = compareTextAccuracy(transcription.join(' '), transcriptWords.join(' '))
+
+      if (score >= threshold) {
+        setCurrentWordIndex(currentWordIndex + transcription.length)
+      }
+    }
+
+    trackTranscriptLocation(transcrptionOutput)
+  }, [transcrptionOutput])
   // Auto-advance word highlighting when enabled and session is running
+  /*
   useEffect(() => {
     if (isStarted && !isPaused && enableHighlighting && showTranscript) {
       const words = transcript.split(" ").filter((word) => word.trim().length > 0);
@@ -167,6 +189,7 @@ const LearningPage = () => {
       return () => clearInterval(wordInterval);
     }
   }, [isStarted, isPaused, enableHighlighting, showTranscript, transcript]);
+  */
   // Handle timer and transcript visibility - learning mode uses difficulty-based delays
   useEffect(() => {
     if (isStarted && !isPaused) {
@@ -209,8 +232,8 @@ const LearningPage = () => {
           <Link
             to="/webcam"
             className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 cursor-pointer ${isDark
-                ? "bg-slate-800/40 border-purple-400/30 text-purple-100 hover:bg-slate-800/60 hover:border-purple-400/50"
-                : "bg-white/60 border-purple-200 text-purple-900 hover:bg-white/80 hover:border-purple-400"
+              ? "bg-slate-800/40 border-purple-400/30 text-purple-100 hover:bg-slate-800/60 hover:border-purple-400/50"
+              : "bg-white/60 border-purple-200 text-purple-900 hover:bg-white/80 hover:border-purple-400"
               } hover:scale-105`}
           >
             <Home className="w-5 h-5" />
@@ -229,7 +252,10 @@ const LearningPage = () => {
             transcript={transcript}
             mode="learning"
             difficulty={difficulty}
-            onTranscriptChange={setTranscript}
+            onTranscriptChange={(text)=>{
+              setTranscript(text)
+              setSlicedTranscript(processTranscript(text))
+            }}
             onModeChange={() => { }} // Mode is fixed to learning
             onDifficultyChange={setDifficulty}
             onStart={handleStart}
@@ -251,11 +277,8 @@ const LearningPage = () => {
           />
         )}
 
-        {/* Sentiment Display
-        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
-
         {/* Caption Display */}
-        <Caption text={"Transcription: " + transcrptionOutput} isVisible={isStarted}></Caption>
+        <Caption text={"Transcription: " + transcrptionOutput.join(" ")} isVisible={isStarted}></Caption>
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />
