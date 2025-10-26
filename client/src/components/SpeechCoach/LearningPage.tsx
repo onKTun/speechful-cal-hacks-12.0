@@ -1,19 +1,19 @@
- import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import Webcam from "react-webcam";
 import { Home } from "lucide-react";
 import { useTheme } from "../../ThemeContext";
-import { useSentimentCapture } from "../../hooks/useSentimentCapture";
 import { WebcamDisplay } from "./WebcamDisplay";
 import { SetupScreen } from "./SetupScreen";
 import { SessionScreen } from "./SessionScreen";
-import { SentimentDisplay } from "./SentimentDisplay";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
+import { Caption } from "./Captions";
 
 const LearningPage = () => {
   const { isDark } = useTheme();
   const [transcript, setTranscript] = useState("");
+  const [transcrptionOutput, setTranscriptionOutput] = useState("")
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
   const [isStarted, setIsStarted] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -25,7 +25,7 @@ const LearningPage = () => {
   const webcamRef = useRef<Webcam>(null);
   const microphone = useRef<MediaRecorder | undefined>(undefined)
   const intervalRef = useRef<number | null>(null);
-  const webSocket = useRef<WebSocket|undefined>(undefined)
+  const webSocket = useRef<WebSocket | undefined>(undefined)
 
   const getMicrophone = async () => {
     try {
@@ -142,7 +142,7 @@ const LearningPage = () => {
 
       //this handles where the transcript data is going!
       if (data && data.channel && data.channel.alternatives[0].transcript !== "") {
-        //setOutput(data.channel.alternatives[0].transcript)
+        setTranscriptionOutput(data.channel.alternatives[0].transcript)
       }
     });
 
@@ -200,27 +200,25 @@ const LearningPage = () => {
 
   return (
     <div
-      className={`min-h-screen ${
-        isDark ? "bg-slate-900" : "bg-pink-50"
-      } transition-colors duration-500`}
+      className={`min-h-screen ${isDark ? "bg-slate-900" : "bg-pink-50"
+        } transition-colors duration-500`}
     >
       {/* Back to Free Session Selection Button - Only visible on setup screen */}
       {!isStarted && (
         <div className="fixed top-6 right-6 z-50">
           <Link
             to="/webcam"
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 cursor-pointer ${
-              isDark
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 cursor-pointer ${isDark
                 ? "bg-slate-800/40 border-purple-400/30 text-purple-100 hover:bg-slate-800/60 hover:border-purple-400/50"
                 : "bg-white/60 border-purple-200 text-purple-900 hover:bg-white/80 hover:border-purple-400"
-            } hover:scale-105`}
+              } hover:scale-105`}
           >
             <Home className="w-5 h-5" />
             <span className="font-semibold">Back to Mode Selection</span>
           </Link>
         </div>
       )}
-      
+
       <div className="relative min-h-screen overflow-hidden pt-0">
         {/* Webcam Display */}
         <WebcamDisplay webcamRef={webcamRef} isStarted={isStarted} isHovered={isHovered} />
@@ -232,7 +230,7 @@ const LearningPage = () => {
             mode="learning"
             difficulty={difficulty}
             onTranscriptChange={setTranscript}
-            onModeChange={() => {}} // Mode is fixed to learning
+            onModeChange={() => { }} // Mode is fixed to learning
             onDifficultyChange={setDifficulty}
             onStart={handleStart}
             hideModeSelection={true}
@@ -256,7 +254,8 @@ const LearningPage = () => {
         {/* Sentiment Display
         <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
 
-
+        {/* Caption Display */}
+        <Caption text={"Transcription: " + transcrptionOutput} isVisible={isStarted}></Caption>
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />
