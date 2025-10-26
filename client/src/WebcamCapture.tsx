@@ -11,17 +11,6 @@ const WebcamCapture = () => {
     const [recordedChunks, setRecordedChunks] = React.useState<Blob[]>([]);
     const [runningRating, setRunningRating] = React.useState<number[][]>([]);
 
-    function calcAverage(): number[] {
-        if (runningRating.length == 0) return [6, 6, 6];
-
-        const sums = runningRating.reduce(
-            (acc, arr) => acc.map((v, i) => v + (arr[i] ?? 0)),
-            [0, 0, 0]
-        );
-
-        return sums.map(v => v / runningRating.length);
-    }
-
     const capture = async () => {
         if (!webcamRef.current)
             return;
@@ -42,9 +31,18 @@ const WebcamCapture = () => {
                 if (updated.length > 5) {
                     updated.shift();
                 }
+
+                const sums = updated.reduce(
+                    (acc, arr) => acc.map((v:number, i:number) => v + (arr[i] ?? 0)),
+                    [0, 0, 0]
+                );
+                const averages: number[] = sums.map((v: number): number => v / updated.length);
+                const overallSentiment = averages.reduce((sum:number, val:number) => sum + val, 0) / averages.length;
+                
+                setSentiment(overallSentiment);
+                
                 return updated;
             });
-            console.log(runningRating);
 
         } catch (err) {
             console.error(err);
@@ -110,11 +108,14 @@ const WebcamCapture = () => {
                 <button onClick={startRecording}>Start</button>
             )}
             <div>
-  {runningRating.map((r, i) => (
-    <div key={i}>{r.join(", ")}</div>
-  ))}
-</div>
-
+                {runningRating.map((r, i) => (
+                    <div key={i}>{r.join(", ")}</div>
+                ))}
+            </div>
+            <div>{sentiment}</div>
+            {sentiment >= 7 && <div>😄</div>}
+            {sentiment < 7 && sentiment >= 5 && <div>😐</div>}
+            {sentiment < 5 && <div>😢</div>}
         </div>
     )
 }
