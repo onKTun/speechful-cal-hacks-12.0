@@ -1,31 +1,49 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const cors = require('cors');
+const express = require("express");
+const dotenv = require("dotenv");
+const http = require("http");
+const cors = require("cors");
+//const multer = require("multer");
+const WebSocket = require("ws");
+const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+const server = http.createServer(app); // Wrap it in HTTP server
+const wss = new WebSocket.WebSocketServer({ server });
+
 const PORT = 3000;
+
+const deepgramClient = createClient(process.env.DEEPGRAM_API_KEY);
+let keepAlive;
+
+// Configure multer for audio file uploads
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+});
 
 // Checks validness of response from Claude (ideally, this should always return true, but we never know)
 function getValues(str) {
     // Check if the response is a string and follows the expected format
     const text = str.content[0].text;
-
-    const match = text.match(/```json\s*([\s\S]*?)\s*```/);
-
-    if (match) {
-        const jsonString = match[1];
+    // Try to match JSON in code blocks first
+    let match = text.match(/```json\s*([\s\S]*?)\s*```/);
+    let jsonString = match ? match[1] : text.trim();
+    try {
         const data = JSON.parse(jsonString);
         return [data.facial_expression, data.eyesight, data.focus];
+    } catch (e) {
+        console.log(text);
+        return [-1, -1, -1];
     }
-    console.log(text);
-    return [-1, -1, -1];
 }
 
-app.post('/sentiment', async (req, res) => {
+app.post('/sentiment/visual', async (req, res) => {
     const { base64Image } = req.body;
     
     try {
@@ -38,7 +56,7 @@ app.post('/sentiment', async (req, res) => {
  
         const requestBody = {
             model: 'claude-haiku-4-5',
-            max_tokens: 200,
+            max_tokens: 100,
             messages: [
                 {
                     role: 'user',
@@ -79,7 +97,7 @@ app.post('/sentiment', async (req, res) => {
         console.log(result);
         //const result = data.choices[0].message.content;
         // if (!isValidClaudeJsonResponse(data.content[0].text)) {
-        //     data.content[0].text = '```json\n{"facial_expression": 5, "eyesight": 5, "focus": 5}\n```'
+        //     data.content[0].text = '```json\n{"facial_expression": 5, "eye_contact": 5, "focus": 5}\n```'
         // }
         res.json({ result });
     } catch (err) {
@@ -87,9 +105,154 @@ app.post('/sentiment', async (req, res) => {
     }
 });
 
-app.listen(PORT, (error) =>{
+app.post('/feedback', async(req, res) => {
+    const averagedRatings = req.body.averagedRatings;
+    console.log(averagedRatings);
+
+    try {
+        const url = `${process.env.LAVA_BASE_URL}/forward?u=${process.env.MODEL_URL}`;
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': process.env.LAVA_FORWARD_TOKEN,
+            'anthropic-version': '2023-06-01'
+        };
+ 
+        const requestBody = {
+            model: 'claude-haiku-4-5',
+            max_tokens: 500,
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: `You are a presentation coach analyzing a speaker's performance metrics.
+
+                                    Here are the speaker's ratings (each category has: average, minimum, maximum - in this order - on a 1-10 scale):
+                                    - Facial Expression (friendliness & engagement): [${averagedRatings[0].join(', ')}]
+                                    - Eye Contact: [${averagedRatings[1].join(', ')}]
+                                    - Focus (fidgeting & engagement): [${averagedRatings[2].join(', ')}]
+
+                                    Based on these metrics, provide feedback in this exact format:
+                                    1. One bullet point highlighting what the speaker does well
+                                    2. Three bullet points on areas to improve
+
+                                    Each point should be 1-2 sentences, written directly to the speaker, and include specific, actionable advice. For example: "You're fidgeting too much, which makes you appear less confident. Try keeping your hands visible and still, or use controlled gestures to emphasize key points."
+
+                                    Focus on translating the metrics into tangible, observable behaviors the speaker can work on. Do not mention scores anywhere, as the feedback should be primarily qualitative. Jump straight into the bullet points, no need to preface with something like "Your presentation feedback" It
+                                    is good to separate the bullet points with "What you do well:" and "Areas to Improve", though.`
+                        },
+                    ],
+                },
+            ],
+            system: 'You are a helpful assistant.'
+        };
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify(requestBody)
+        });
+
+        const data = await response.json();
+        console.log(data);
+        const result = data.content[0].text;
+    
+        res.json({ result });
+    } catch (err) {
+        console.error(err);
+    }
+
+});
+
+// Handle stt websocket/deppgram connection
+const setupDeepgram = (ws) => {
+  const deepgram = deepgramClient.listen.live({
+    smart_format: false,
+    interim_results:true,
+    utterance_end_ms: 1000,
+    vad_events: true,
+    endpointing: 300,
+    model: "nova-3",
+  });
+
+  if (keepAlive) clearInterval(keepAlive);
+  keepAlive = setInterval(() => {
+    console.log("deepgram: keepalive");
+    deepgram.keepAlive();
+  }, 10 * 1000);
+
+  deepgram.addListener(LiveTranscriptionEvents.Open, async () => {
+    console.log("deepgram: connected");
+
+    deepgram.addListener(LiveTranscriptionEvents.Transcript, (data) => {
+      console.log(
+        "deepgram: transcript received: " +
+          data.channel.alternatives[0].transcript
+      );
+      console.log("ws: transcript sent to client");
+      ws.send(JSON.stringify(data));
+    });
+
+    deepgram.addListener(LiveTranscriptionEvents.Close, async () => {
+      console.log("deepgram: disconnected");
+      clearInterval(keepAlive);
+      deepgram.finish();
+    });
+
+    deepgram.addListener(LiveTranscriptionEvents.Error, async (error) => {
+      console.log("deepgram: error received");
+      console.error(error);
+    });
+
+    deepgram.addListener(LiveTranscriptionEvents.Warning, async (warning) => {
+      console.log("deepgram: warning received");
+      console.warn(warning);
+    });
+
+    deepgram.addListener(LiveTranscriptionEvents.Metadata, (data) => {
+      console.log("deepgram: metadata received");
+      console.log("ws: metadata sent to client");
+      ws.send(JSON.stringify({ metadata: data }));
+    });
+  });
+
+  return deepgram;
+};
+
+wss.on("connection", (ws) => {
+  console.log("ws: client connected");
+  let deepgram = setupDeepgram(ws);
+
+  ws.on("message", (message) => {
+    console.log("ws: client data received");
+
+    if (deepgram.getReadyState() === 1 /* OPEN */) {
+      console.log("ws: data sent to deepgram");
+      deepgram.send(message);
+    } else if (deepgram.getReadyState() >= 2 /* 2 = CLOSING, 3 = CLOSED */) {
+      console.log("ws: data couldn't be sent to deepgram");
+      console.log("ws: retrying connection to deepgram");
+      /* Attempt to reopen the Deepgram connection */
+      deepgram.finish();
+      deepgram.removeAllListeners();
+      deepgram = setupDeepgram(ws);
+    } else {
+      console.log("ws: data couldn't be sent to deepgram");
+    }
+  });
+
+  ws.on("close", () => {
+    console.log("ws: client disconnected");
+    deepgram.finish();
+    deepgram.removeAllListeners();
+    deepgram = null;
+  });
+});
+
+
+server.listen(PORT, (error) =>{
     if(!error) {
         console.log(`Server is running on https://localhost:${PORT}`);}
     else
         console.log("Error occured, ", error);
-});
+}); 
