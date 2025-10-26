@@ -14,6 +14,7 @@ import { processTranscript, compareTextAccuracy } from "../../learning/utils/pro
 const LearningPage = () => {
   const { isDark } = useTheme();
   const [transcript, setTranscript] = useState<string>("");
+  //const [redactedTranscript, setRedactedTranscript] = useState<string>("");
   const [slicedTranscript, setSlicedTranscript] = useState<string[]>([""]); //processed version of the transcript
   const [transcrptionOutput, setTranscriptionOutput] = useState<string[]>([""]) //transcription output is always processed
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy");
@@ -66,6 +67,7 @@ const LearningPage = () => {
   const closeMicrophone = async (microphone: MediaRecorder) => {
     microphone.stop();
   }
+
 
   const handleStart = async () => {
     if (!microphone.current) {

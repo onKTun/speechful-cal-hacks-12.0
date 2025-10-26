@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { Mode, Difficulty } from "../../types";
 import { HighlightingTranscript } from "./HighlightingTranscript";
 
@@ -18,6 +19,12 @@ export const TranscriptDisplay = ({
   currentWordIndex = 0,
   enableHighlighting = false,
 }: TranscriptDisplayProps) => {
+
+  const [transcriptToDisplay, setTranscript] = useState(transcript)
+  useEffect(() => {
+    setTranscript(getRedactedTranscript(transcript, difficulty))
+  }, [difficulty, showTranscript, mode])
+
   const getTranscriptOpacity = () => {
     if (!showTranscript) return 0;
     if (mode === "rehearsal") return 1;
@@ -29,18 +36,26 @@ export const TranscriptDisplay = ({
     return opacities[difficulty];
   };
 
-  const getTranscriptAmount = () => {
+
+  const getRedactedTranscript = (transcript: string, difficulty: "easy" | "medium" | "hard"): string => {
     if (!showTranscript) return "";
-    const words = transcript.split(" ");
     if (mode === "rehearsal") return transcript;
-    const amounts: { [key: string]: number } = {
-      easy: 1,
-      medium: 0.5,
-      hard: 0.25,
+    if (difficulty === "easy") return transcript;
+
+    const words = transcript.split(" ");
+    const redactionRates = {
+      medium: 0.3, // 30% of words redacted
+      hard: 0.5    // 50% of words redacted
     };
-    const showCount = Math.ceil(words.length * amounts[difficulty]);
-    return words.slice(0, showCount).join(" ");
+
+    return words
+      .map((word, index) => {
+        const shouldRedact = Math.random() < (redactionRates[difficulty] || 0);
+        return shouldRedact ? "___" : word;
+      })
+      .join(" ");
   };
+
 
   // Rehearsal Mode - Centered at Top
   if (mode === "rehearsal") {
@@ -52,7 +67,7 @@ export const TranscriptDisplay = ({
         >
           {enableHighlighting ? (
             <HighlightingTranscript
-              transcript={getTranscriptAmount()}
+              transcript={transcriptToDisplay}
               currentWordIndex={currentWordIndex}
               highlightColor="bg-yellow-400"
               textColor="text-white"
@@ -60,7 +75,7 @@ export const TranscriptDisplay = ({
             />
           ) : (
             <div className="text-white text-2xl leading-relaxed line-clamp-2 text-center">
-              {getTranscriptAmount() || (
+                {transcriptToDisplay || (
                 <span className="text-white/60">Transcript will appear here...</span>
               )}
             </div>
@@ -79,7 +94,7 @@ export const TranscriptDisplay = ({
       >
         {enableHighlighting ? (
           <HighlightingTranscript
-            transcript={getTranscriptAmount()}
+            transcript={transcriptToDisplay}
             currentWordIndex={currentWordIndex}
             highlightColor="bg-yellow-400"
             textColor="text-white"
@@ -93,7 +108,7 @@ export const TranscriptDisplay = ({
               scrollbarColor: "rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1)",
             }}
           >
-            {getTranscriptAmount() || (
+              {transcriptToDisplay || (
               <span className="text-white/60">Transcript will appear here...</span>
             )}
           </div>
