@@ -8,6 +8,7 @@ import { WebcamDisplay } from "./WebcamDisplay";
 import { SetupScreen } from "./SetupScreen";
 import { SessionScreen } from "./SessionScreen";
 import { SentimentDisplay } from "./SentimentDisplay";
+import { SuggestionDisplay } from "./SuggestionDisplay";
 import { Timer } from "./Timer";
 import { Controls } from "./Controls";
 
@@ -26,7 +27,7 @@ const LearningPage = () => {
   const intervalRef = useRef<number | null>(null);
 
   // Use custom hook for sentiment capture
-  const sentiment = useSentimentCapture(webcamRef, isStarted, isPaused);
+  const { sentiment, suggestion } = useSentimentCapture(webcamRef, isStarted, isPaused);
 
   // Auto-advance word highlighting when enabled and session is running
   useEffect(() => {
@@ -152,8 +153,11 @@ const LearningPage = () => {
           />
         )}
 
-        {/* Sentiment Display
+        {/* Sentiment Display 
         <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
+
+        {/* Suggestion Display */}
+        <SuggestionDisplay suggestion={suggestion} isVisible={isStarted}/>
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />
