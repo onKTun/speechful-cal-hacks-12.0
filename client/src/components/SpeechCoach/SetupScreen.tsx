@@ -194,7 +194,7 @@ export const SetupScreen = ({
             onMouseEnter={onButtonHover}
             onMouseLeave={onButtonUnhover}
             disabled={!transcript.trim() || !mode}
-            className={`group w-full sm:w-auto px-16 py-5 rounded-2xl bg-linear-to-r ${
+            className={`group w-full sm:w-auto px-16 py-5 rounded-2xl bg-linear-to-r cursor-pointer ${
               isDark
                 ? "from-pink-400 via-purple-400 to-blue-400 text-slate-900 shadow-purple-400/30 hover:shadow-xl hover:shadow-purple-400/40"
                 : "from-pink-300 via-purple-300 to-blue-300 text-purple-900 shadow-purple-300/50 hover:shadow-xl hover:shadow-purple-400/60"

@@ -20,7 +20,7 @@ export const FreeSessionSplash = () => {
       <div className="fixed top-6 right-6 z-50">
         <Link
           to="/"
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all backdrop-blur-xl border-2 cursor-pointer ${
             isDark
               ? "bg-slate-800/40 border-purple-400/30 text-purple-100 hover:bg-slate-800/60 hover:border-purple-400/50"
               : "bg-white/60 border-purple-200 text-purple-900 hover:bg-white/80 hover:border-purple-400"
@@ -102,7 +102,7 @@ export const FreeSessionSplash = () => {
                   </p>
                   <div className="pt-4">
                     <button
-                      className={`group-hover:scale-110 px-8 py-3 rounded-xl bg-linear-to-r transition-all duration-300 ${
+                      className={`group-hover:scale-110 px-8 py-3 rounded-xl bg-linear-to-r transition-all duration-300 cursor-pointer ${
                         isDark
                           ? "from-pink-400 via-purple-400 to-blue-400 text-slate-900"
                           : "from-pink-300 via-purple-300 to-blue-300 text-purple-900"
@@ -145,7 +145,7 @@ export const FreeSessionSplash = () => {
                   </p>
                   <div className="pt-4">
                     <button
-                      className={`group-hover:scale-110 px-8 py-3 rounded-xl bg-linear-to-r transition-all duration-300 ${
+                      className={`group-hover:scale-110 px-8 py-3 rounded-xl bg-linear-to-r transition-all duration-300 cursor-pointer ${
                         isDark
                           ? "from-pink-400 via-purple-400 to-blue-400 text-slate-900"
                           : "from-pink-300 via-purple-300 to-blue-300 text-purple-900"
