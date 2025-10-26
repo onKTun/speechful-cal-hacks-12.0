@@ -23,11 +23,133 @@ const LearningPage = () => {
   const [enableHighlighting, setEnableHighlighting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const webcamRef = useRef<Webcam>(null);
+  const microphone = useRef<MediaRecorder | undefined>(undefined)
   const intervalRef = useRef<number | null>(null);
+  const webSocket = useRef<WebSocket|undefined>(undefined)
 
-  // Use custom hook for sentiment capture
-  const sentiment = useSentimentCapture(webcamRef, isStarted, isPaused);
+  const getMicrophone = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      return new MediaRecorder(stream, { mimeType: "audio/webm" });
+    } catch (error) {
+      console.error("error accessing microphone:", error);
+      throw error;
+    }
+  }
+  const openMicrophone = async (microphone: MediaRecorder, socket: WebSocket) => {
+    return new Promise((resolve: any) => {
+      microphone.onstart = () => {
+        console.log("client: microphone opened");
+        document.body.classList.add("recording");
+        resolve();
+      };
 
+      microphone.onstop = () => {
+        console.log("client: microphone closed");
+        document.body.classList.remove("recording");
+      };
+
+      microphone.ondataavailable = (event: any) => {
+        console.log("client: microphone data received");
+        if (event.data.size > 0 && socket.readyState === WebSocket.OPEN) {
+          socket.send(event.data);
+        }
+      };
+
+      microphone.start(1000);
+    });
+  }
+  const closeMicrophone = async (microphone: MediaRecorder) => {
+    microphone.stop();
+  }
+
+  const handleStart = async () => {
+    if (!microphone.current) {
+      try {
+        microphone.current = await getMicrophone();
+
+      } catch (error) {
+        console.error("error getting microphone:", error);
+      }
+    }
+    if (microphone.current && webSocket.current) {
+      await openMicrophone(microphone.current, webSocket.current);
+    }
+    setIsStarted(true);
+    setIsPaused(false);
+    setElapsedTime(0);
+    setShowTranscript(false);
+    setCurrentWordIndex(0);
+    setEnableHighlighting(false);
+  };
+  const handleStop = async () => {
+    if (microphone.current) {
+      await closeMicrophone(microphone.current);
+    }
+    microphone.current = undefined;
+    setIsStarted(false);
+    setIsPaused(false);
+    setElapsedTime(0);
+    setShowTranscript(false);
+    setCurrentWordIndex(0);
+  };
+  const handleTogglePause = async () => {
+    if (microphone.current) {
+      await closeMicrophone(microphone.current);
+    }
+    microphone.current = undefined;
+    setIsPaused(!isPaused);
+  };
+
+
+  // Handle connection to websocket and microphone access
+  useEffect(() => {
+    const socket = new WebSocket("ws://localhost:3000");
+    webSocket.current = socket
+
+    //once the websocket is open, this function is called to get microphone access
+    const configureMic = async () => {
+      console.log("client: waiting to open microphone");
+      if (!microphone.current) {
+        try {
+          microphone.current = await getMicrophone();
+
+        } catch (error) {
+          console.error("error getting microphone:", error);
+        }
+      }
+
+    }
+
+    socket.addEventListener("open", async () => {
+      console.log("client: connected to server");
+      await configureMic();
+    });
+
+    //listener for recieving 
+    socket.addEventListener("message", (event) => {
+      if (event.data === "") {
+        return;
+      }
+
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (e) {
+        console.error("Failed to parse JSON:", e);
+        return;
+      }
+
+      //this handles where the transcript data is going!
+      if (data && data.channel && data.channel.alternatives[0].transcript !== "") {
+        //setOutput(data.channel.alternatives[0].transcript)
+      }
+    });
+
+    socket.addEventListener("close", () => {
+      console.log("client: disconnected from server");
+    });
+  }, [])
   // Auto-advance word highlighting when enabled and session is running
   useEffect(() => {
     if (isStarted && !isPaused && enableHighlighting && showTranscript) {
@@ -45,7 +167,6 @@ const LearningPage = () => {
       return () => clearInterval(wordInterval);
     }
   }, [isStarted, isPaused, enableHighlighting, showTranscript, transcript]);
-
   // Handle timer and transcript visibility - learning mode uses difficulty-based delays
   useEffect(() => {
     if (isStarted && !isPaused) {
@@ -76,26 +197,6 @@ const LearningPage = () => {
     };
   }, [isStarted, isPaused, difficulty]);
 
-  const handleStart = () => {
-    setIsStarted(true);
-    setIsPaused(false);
-    setElapsedTime(0);
-    setShowTranscript(false);
-    setCurrentWordIndex(0);
-    setEnableHighlighting(false);
-  };
-
-  const handleStop = () => {
-    setIsStarted(false);
-    setIsPaused(false);
-    setElapsedTime(0);
-    setShowTranscript(false);
-    setCurrentWordIndex(0);
-  };
-
-  const handleTogglePause = () => {
-    setIsPaused(!isPaused);
-  };
 
   return (
     <div
@@ -154,6 +255,8 @@ const LearningPage = () => {
 
         {/* Sentiment Display
         <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
+
+
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />
