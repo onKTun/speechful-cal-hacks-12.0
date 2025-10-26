@@ -12,6 +12,7 @@ import { SentimentDisplay } from "./components/SpeechCoach/SentimentDisplay";
 import { Timer } from "./components/SpeechCoach/Timer";
 import { Controls } from "./components/SpeechCoach/Controls";
 import type { Mode, Difficulty } from "./types";
+import { SuggestionDisplay } from "./components/SpeechCoach/SuggestionDisplay";
 
 const SpeechCoach = () => {
   const { isDark } = useTheme();
@@ -28,7 +29,7 @@ const SpeechCoach = () => {
   const intervalRef = useRef<number | null>(null);
 
   // Use custom hook for sentiment capture
-  const sentiment = useSentimentCapture(webcamRef, isStarted, isPaused);
+  const { sentiment, suggestion }= useSentimentCapture(webcamRef, isStarted, isPaused);
 
   // Auto-advance word highlighting when enabled and session is running
   useEffect(() => {
@@ -156,8 +157,11 @@ const SpeechCoach = () => {
           />
         )}
 
-        {/* Sentiment Display */}
-        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} />
+        {/* Sentiment Display
+        <SentimentDisplay sentiment={sentiment} isVisible={isStarted} /> */}
+
+        {/* Suggestion Display */}
+        <SuggestionDisplay suggestion={suggestion} isVisible={isStarted}/>
 
         {/* Timer Display */}
         <Timer elapsedTime={elapsedTime} isVisible={isStarted} />

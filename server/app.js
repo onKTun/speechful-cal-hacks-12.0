@@ -2,7 +2,7 @@ const express = require("express");
 const dotenv = require("dotenv");
 const http = require("http");
 const cors = require("cors");
-//const multer = require("multer");
+const multer = require("multer");
 const WebSocket = require("ws");
 const { createClient, LiveTranscriptionEvents } = require("@deepgram/sdk");
 
@@ -103,65 +103,6 @@ app.post('/sentiment/visual', async (req, res) => {
     } catch (err) {
         console.error(err);
     }
-});
-
-app.post('/feedback', async(req, res) => {
-    const averagedRatings = req.body.averagedRatings;
-    console.log(averagedRatings);
-
-    try {
-        const url = `${process.env.LAVA_BASE_URL}/forward?u=${process.env.MODEL_URL}`;
-        const headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': process.env.LAVA_FORWARD_TOKEN,
-            'anthropic-version': '2023-06-01'
-        };
- 
-        const requestBody = {
-            model: 'claude-haiku-4-5',
-            max_tokens: 500,
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        {
-                            type: 'text',
-                            text: `You are a presentation coach analyzing a speaker's performance metrics.
-
-                                    Here are the speaker's ratings (each category has: average, minimum, maximum - in this order - on a 1-10 scale):
-                                    - Facial Expression (friendliness & engagement): [${averagedRatings[0].join(', ')}]
-                                    - Eye Contact: [${averagedRatings[1].join(', ')}]
-                                    - Focus (fidgeting & engagement): [${averagedRatings[2].join(', ')}]
-
-                                    Based on these metrics, provide feedback in this exact format:
-                                    1. One bullet point highlighting what the speaker does well
-                                    2. Three bullet points on areas to improve
-
-                                    Each point should be 1-2 sentences, written directly to the speaker, and include specific, actionable advice. For example: "You're fidgeting too much, which makes you appear less confident. Try keeping your hands visible and still, or use controlled gestures to emphasize key points."
-
-                                    Focus on translating the metrics into tangible, observable behaviors the speaker can work on. Do not mention scores anywhere, as the feedback should be primarily qualitative. Jump straight into the bullet points, no need to preface with something like "Your presentation feedback" It
-                                    is good to separate the bullet points with "What you do well:" and "Areas to Improve", though.`
-                        },
-                    ],
-                },
-            ],
-            system: 'You are a helpful assistant.'
-        };
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(requestBody)
-        });
-
-        const data = await response.json();
-        console.log(data);
-        const result = data.content[0].text;
-    
-        res.json({ result });
-    } catch (err) {
-        console.error(err);
-    }
-
 });
 
 // Handle stt websocket/deppgram connection
