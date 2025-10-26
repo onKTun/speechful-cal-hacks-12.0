@@ -29,7 +29,7 @@ const LearningPage = () => {
   const intervalRef = useRef<number | null>(null);
   const webSocket = useRef<WebSocket | undefined>(undefined)
 
-  const threshold = 0.85
+  const threshold = 0.80
  
   const getMicrophone = async () => {
     try {
@@ -172,31 +172,100 @@ const LearningPage = () => {
   // Track user location in transcript
   useEffect(() => {
     const trackTranscriptLocation = (transcription: string[]) => {
-      if (transcription.length == 0) {
+      // Better validation
+      if (!transcription || transcription.length === 0 || transcription.every(word => !word.trim())) {
         return;
       }
 
-      const endIndex1 = Math.min(slicedTranscript.length, currentWordIndex + transcription.length + 5);
-      const endIndex2 = Math.min(slicedTranscript.length, currentWordIndex + transcription.length);
-      const half = Math.floor(transcription.length/2)
-      const transcriptWordsDelayed = slicedTranscript.slice(Math.max(0, currentWordIndex - 5), currentWordIndex + transcription.length)
-      const transcriptWordsAhead = slicedTranscript.slice(currentWordIndex, endIndex1);
-      const transcriptWordsMiddle = slicedTranscript.slice(Math.max(0, currentWordIndex - half), Math.min(slicedTranscript.length, currentWordIndex + half))
-      const transcriptWords = slicedTranscript.slice(currentWordIndex, endIndex2 )
-      const score1 = compareTextAccuracy(transcription.join(' '), transcriptWords.join(' '))
-      const score2 = compareTextAccuracy(transcription.join(' '), transcriptWordsDelayed.join(' '))
-      const score3 = compareTextAccuracy(transcription.join(' '), transcriptWordsAhead.join(' '))
-      const score4 = compareTextAccuracy(transcription.join(' '), transcriptWordsMiddle.join(' '))
-      const scores = [
-        { score: score1, start: currentWordIndex, end: endIndex2 },
-        { score: score2, start: Math.max(0, currentWordIndex - 5), end: currentWordIndex + transcription.length },
-        { score: score3, start: currentWordIndex, end: endIndex1 },
-        { score: score4, start: Math.max(0, currentWordIndex - half), end: Math.min(slicedTranscript.length, currentWordIndex + half) }
+      // Prevent index out of bounds
+      if (slicedTranscript.length === 0) {
+        return;
+      }
+
+      // Use dynamic window size based on transcription length
+      const windowSize = Math.max(transcription.length, 5);
+      const lookBehind = Math.min(8, Math.floor(windowSize / 2));
+      const lookAhead = Math.min(5, Math.ceil(windowSize / 2));
+
+      // Ensure indices are valid
+      const safeCurrentIndex = Math.max(0, Math.min(currentWordIndex, slicedTranscript.length - 1));
+
+      // Build comparison windows with safe bounds
+      const windows = [
+        {
+          name: "current",
+          start: safeCurrentIndex,
+          end: Math.min(slicedTranscript.length, safeCurrentIndex + transcription.length)
+        },
+        {
+          name: "behind",
+          start: Math.max(0, safeCurrentIndex - lookBehind),
+          end: Math.min(slicedTranscript.length, safeCurrentIndex + transcription.length - lookBehind)
+        },
+        {
+          name: "ahead",
+          start: safeCurrentIndex,
+          end: Math.min(slicedTranscript.length, safeCurrentIndex + transcription.length + lookAhead)
+        },
+        {
+          name: "centered",
+          start: Math.max(0, safeCurrentIndex - Math.floor(transcription.length / 2)),
+          end: Math.min(slicedTranscript.length, safeCurrentIndex + Math.ceil(transcription.length / 2))
+        }
       ];
+
+      // Calculate scores for each window
+      const scores = windows.map(window => {
+        const words = slicedTranscript.slice(window.start, window.end);
+        return {
+          ...window,
+          score: compareTextAccuracy(transcription.join(' '), words.join(' '))
+        };
+      });
+
       const maxScore = scores.reduce((max, curr) => curr.score > max.score ? curr : max, scores[0]);
-      console.log(`Best match: score=${maxScore.score}, start=${maxScore.start}, end=${maxScore.end}`);
+      console.log(`Best match: ${maxScore.name}, score=${maxScore.score.toFixed(2)}, start=${maxScore.start}, end=${maxScore.end}`);
+
+      // Lower threshold or provide fallback behavior
       if (maxScore.score >= threshold) {
-        setCurrentWordIndex(maxScore.end)
+        // Fine-tune position using last few words
+        const wordsToCheck = Math.min(3, transcrptionOutput.length);
+        if (wordsToCheck === 0) return;
+
+        const lastWords = transcrptionOutput.slice(-wordsToCheck);
+        let maxSimilarity = 0;
+        let bestIndex = maxScore.end;
+
+        // Ensure we have enough words in the window
+        const searchEnd = Math.max(maxScore.start + wordsToCheck, maxScore.end);
+
+        for (let i = maxScore.start; i <= searchEnd - wordsToCheck; i++) {
+          const wordWindow = slicedTranscript.slice(i, i + wordsToCheck);
+          const similarity = compareTextAccuracy(
+            lastWords.join(' '),
+            wordWindow.join(' ')
+          );
+          if (similarity > maxSimilarity) {
+            maxSimilarity = similarity;
+            bestIndex = i + wordsToCheck;
+          }
+        }
+
+        setCurrentWordIndex(Math.min(bestIndex, slicedTranscript.length - 1));
+      } else {
+        // Gentler fallback: only advance occasionally and slowly
+        // Use a counter to advance every N failed attempts instead of every time
+        const advanceFrequency = 5; // Only advance every 5 failed attempts
+        const advanceAmount = 1; // Move forward by just 1 word
+
+        // You'll need to add this to your component state
+        // For now, we'll just log and do nothing (most conservative approach)
+        console.log(`Score below threshold (${maxScore.score.toFixed(2)}), holding position`);
+
+        // Alternative: Very slow advancement (uncomment if you want some movement)
+         if (Math.random() < 0.2) { // 20% chance to advance
+             setCurrentWordIndex(prev => Math.min(prev + advanceAmount, slicedTranscript.length - 1));
+         }
       }
     }
 
